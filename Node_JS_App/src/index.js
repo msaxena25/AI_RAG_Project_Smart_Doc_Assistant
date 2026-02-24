@@ -1,16 +1,11 @@
-import { processPdf } from "./process-pdf.js";
-import { generateAnswerFromLLM } from "./genai-util.js";
-import { findTopSimilarChunks} from "./similarity-search.js";
-import { listStoredEmbeddings, loadEmbeddingsFromFile } from "./embedding-store.js";
-import { getPromptEmbeddingWithCache, listCachedPrompts, clearPromptCache } from "./prompt-cache.js";
-import formatLLMMessage from './util.js';
+import { processPdf } from "./document-processer.js";
+import { findTopSimilarChunks } from "./vector-operations/cosine-similarity-search.js";
+import { getPromptEmbeddingWithCache } from "./store/prompt.cache.js";
+import formatLLMMessage from './utils/util.js';
+import { FILE_PATHS } from './config/path.js';
 import dotenv from "dotenv";
 import express from "express";
-import path from "path";
 dotenv.config();
-
-// Static file path from asset folder
-const assetPdfPath = path.join(process.cwd(), "asset", "test_mohit.pdf");
 
 
 const app = express();
@@ -57,7 +52,7 @@ app.get("/query", async (request, response) => {
 
 app.get("/process-pdf", async (request, response) => {
     try {
-        const embeddings = await processPdf(assetPdfPath); // coverts PDF to text chunks & embeddings and saves to file.
+        const embeddings = await processPdf(FILE_PATHS.TEST_PDF); // coverts PDF to text chunks & embeddings and saves to file.
         response.json(embeddings);
     } catch (error) {
         console.log("🚀 ~ PDF chunk error:", error);

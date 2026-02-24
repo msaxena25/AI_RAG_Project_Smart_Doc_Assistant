@@ -1,9 +1,10 @@
 import { LocalStorage } from "node-localstorage";
-import { generateEmbeddingsForUserPrompt } from "./embedding.js";
+import { generateEmbeddingsForUserPrompt } from "./../vector-operations/embedding.generator.js";
+import { STORAGE_PATHS } from '../config/path.js';
 import crypto from "crypto";
 
 // Initialize local storage
-const localStorage = new LocalStorage('./local-storage');
+const localStorage = new LocalStorage(STORAGE_PATHS.CACHE);
 
 /**
  * Generate a hash key for prompt to use as storage key

@@ -1,5 +1,5 @@
 import cosineSimilarity from "compute-cosine-similarity";
-import { getChunkEmbeddings, loadChunkEmbeddingsFromFile } from "./embedding.js";
+import { getChunkEmbeddings, loadChunkEmbeddingsFromFile } from "./embedding.generator.js";
 
 // Global variable to store top 3 similar chunks for further use
 let top3SimilarChunks = [];

@@ -1,5 +1,6 @@
 import express from "express";
-import path from "path";
+import { listStoredEmbeddings, loadEmbeddingsFromFile } from "./store/embedding.store.js";
+import { getTop3SimilarChunks, getTop3ChunksText } from "./vector-operations/cosine-similarity-search.js";
 const app = express();
 
 // New endpoint to list stored embeddings

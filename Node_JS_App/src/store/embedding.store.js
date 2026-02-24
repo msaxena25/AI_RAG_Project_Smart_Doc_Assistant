@@ -1,9 +1,10 @@
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
+import { STORAGE_PATHS } from '../config/path.js';
 
-// Data directory path
-const DATA_DIR = path.join(process.cwd(), "data");
+// Embeddings directory path
+const DATA_DIR = STORAGE_PATHS.EMBEDDINGS;
 
 /**
  * Generate unique identifier for a PDF file based on name and size

@@ -1,5 +1,5 @@
-import { generateEmbeddingFromGenAI } from "./genai-util.js";
-import { saveEmbeddingsToFile, listStoredEmbeddings, loadExistingEmbeddings } from "./embedding-store.js";
+import { generateEmbeddingFromGenAI } from "./../services/genai.service.js";
+import { saveEmbeddingsToFile, listStoredEmbeddings, loadExistingEmbeddings } from "./../store/embedding.store.js";
 
 // Global variable to store embeddings
 let chunkEmbeddings = [];
