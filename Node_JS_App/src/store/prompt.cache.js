@@ -1,6 +1,7 @@
 import { LocalStorage } from "node-localstorage";
 import { generateEmbeddingsForUserPrompt } from "./../vector-operations/embedding.generator.js";
 import { STORAGE_PATHS } from '../config/path.js';
+import { CACHE_CONFIG, LOGGING_CONFIG } from '../config/app.config.js';
 import crypto from "crypto";
 
 // Initialize local storage
@@ -12,7 +13,7 @@ const localStorage = new LocalStorage(STORAGE_PATHS.CACHE);
  * @returns {string} Hashed key for the prompt
  */
 function generatePromptKey(prompt) {
-    return crypto.createHash('md5').update(prompt.toLowerCase().trim()).digest('hex');
+    return crypto.createHash(CACHE_CONFIG.HASH_ALGORITHM).update(prompt.toLowerCase().trim()).digest(CACHE_CONFIG.HASH_ENCODING);
 }
 
 /**
@@ -29,8 +30,8 @@ function storePromptEmbedding(prompt, embedding) {
             timestamp: new Date().toISOString(),
             embeddingLength: embedding.length
         };
-        localStorage.setItem(`prompt_${key}`, JSON.stringify(data));
-        console.log(`Stored prompt embedding with key: prompt_${key}`);
+        localStorage.setItem(`${CACHE_CONFIG.PROMPT_KEY_PREFIX}${key}`, JSON.stringify(data));
+        console.log(`Stored prompt embedding with key: ${CACHE_CONFIG.PROMPT_KEY_PREFIX}${key}`);
     } catch (error) {
         console.error("Error storing prompt embedding:", error);
     }
@@ -44,11 +45,11 @@ function storePromptEmbedding(prompt, embedding) {
 function getStoredPromptEmbedding(prompt) {
     try {
         const key = generatePromptKey(prompt);
-        const stored = localStorage.getItem(`prompt_${key}`);
+        const stored = localStorage.getItem(`${CACHE_CONFIG.PROMPT_KEY_PREFIX}${key}`);
         
         if (stored) {
             const data = JSON.parse(stored);
-            console.log(`Retrieved cached embedding for prompt: "${prompt.substring(0, 50)}..."`);
+            console.log(`Retrieved cached embedding for prompt: "${prompt.substring(0, LOGGING_CONFIG.MAX_PROMPT_DISPLAY_LENGTH)}..."`);
             return data.embedding;
         }
         

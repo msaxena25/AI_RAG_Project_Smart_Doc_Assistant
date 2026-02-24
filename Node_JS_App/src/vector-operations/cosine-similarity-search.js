@@ -1,5 +1,6 @@
 import cosineSimilarity from "compute-cosine-similarity";
 import { getChunkEmbeddings, loadChunkEmbeddingsFromFile } from "./embedding.generator.js";
+import { EMBEDDING_CONFIG, LOGGING_CONFIG } from '../config/app.config.js';
 
 // Global variable to store top 3 similar chunks for further use
 let top3SimilarChunks = [];
@@ -48,7 +49,7 @@ function calculateSimilarityScores(promptEmbedding, embeddings) {
  * @param {number} topN - Number of top chunks to return (default: 3)
  * @returns {Array} Top N most similar chunks
  */
-function selectTopSimilarChunks(similarities, topN = 3) {
+function selectTopSimilarChunks(similarities, topN = EMBEDDING_CONFIG.DEFAULT_TOP_CHUNKS) {
     return similarities
         .sort((a, b) => b.similarityScore - a.similarityScore)
         .slice(0, topN);
@@ -73,7 +74,7 @@ function logSimilarityResults(topChunks) {
     console.log(`Found ${topChunks.length} similar chunks with scores:`,
         topChunks.map(chunk => ({
             chunkIndex: chunk.chunkIndex,
-            score: chunk.similarityScore.toFixed(4)
+            score: chunk.similarityScore.toFixed(LOGGING_CONFIG.SIMILARITY_SCORE_PRECISION)
         }))
     );
 }

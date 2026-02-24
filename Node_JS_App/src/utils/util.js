@@ -1,3 +1,5 @@
+import { LLM_CONFIG } from '../config/app.config.js';
+
 /**
  * Format message for LLM with context and question
  * @param {string} userPrompt - User's question
@@ -5,12 +7,11 @@
  * @returns {string} Formatted message ready for LLM
  */
 export default function formatLLMMessage(userPrompt, chunksText) {
-    return `You are an assistant that answers ONLY from the provided document context.
-    If the answer is not present, say: "Answer not found in document."
-        --- DOCUMENT CONTEXT ---:
+    return `${LLM_CONFIG.SYSTEM_PROMPT}
+        ${LLM_CONFIG.CONTEXT_START_MARKER}
         ${chunksText}
-        --- END DOCUMENT CONTEXT ---
+        ${LLM_CONFIG.CONTEXT_END_MARKER}
 
-        Question:
+        ${LLM_CONFIG.QUESTION_LABEL}
         ${userPrompt}`;
 }

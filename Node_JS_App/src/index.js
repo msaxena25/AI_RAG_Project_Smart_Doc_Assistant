@@ -3,21 +3,22 @@ import { findTopSimilarChunks } from "./vector-operations/cosine-similarity-sear
 import { getPromptEmbeddingWithCache } from "./store/prompt.cache.js";
 import formatLLMMessage from './utils/util.js';
 import { FILE_PATHS } from './config/path.js';
+import { SERVER_CONFIG, API_MESSAGES, ERROR_MESSAGES } from './config/app.config.js';
 import dotenv from "dotenv";
 import express from "express";
 dotenv.config();
 
 
 const app = express();
-const port = process.env.PORT;
+const port = process.env.PORT || SERVER_CONFIG.DEFAULT_PORT;
 
 if (!port) {
-    console.error("PORT is not set. Set it in .env.");
+    console.error(ERROR_MESSAGES.PORT_NOT_SET);
     process.exit(1);
 }
 
 app.get("/", (request, response) => {
-    response.type("text").send("Smart Document Assistant Node server is running.\n");
+    response.type("text").send(API_MESSAGES.SERVER_RUNNING);
 });
 
 app.get("/query", async (request, response) => {
@@ -25,7 +26,7 @@ app.get("/query", async (request, response) => {
         const userPrompt = request.query.prompt || request.query.q;
 
         if (!userPrompt) {
-            response.status(400).json({ error: "Please provide a prompt parameter" });
+            response.status(400).json({ error: API_MESSAGES.INVALID_PROMPT });
             return;
         }
 
@@ -46,7 +47,7 @@ app.get("/query", async (request, response) => {
         });
     } catch (error) {
         console.log("🚀 ~ error:", error);
-        response.status(500).json({ error: "Failed to process user prompt" });
+        response.status(500).json({ error: ERROR_MESSAGES.PROCESS_PROMPT_ERROR });
     }
 });
 
