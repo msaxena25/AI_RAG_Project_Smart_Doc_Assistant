@@ -112,7 +112,6 @@ export function loadChunkEmbeddingsFromFile(filePath) {
 
 
         const loadedEmbeddings = loadExistingEmbeddings(filePath, latestPdfId);
-        console.log("🚀 ~ loadedEmbeddings:", loadedEmbeddings)
 
         if (loadedEmbeddings && loadedEmbeddings.length > 0) {
             return loadedEmbeddings;

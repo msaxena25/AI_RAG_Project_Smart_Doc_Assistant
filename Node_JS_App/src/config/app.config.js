@@ -97,6 +97,14 @@ export function validateEnvironmentConfig() {
         return false;
     }
     
+    // Check if API key is still the placeholder value
+    if (ENV_CONFIG.GEMINI_API_KEY === 'YOUR_NEW_API_KEY_HERE') {
+        console.error('❌ GEMINI_API_KEY is still set to placeholder value');
+        console.error('Please update your .env file with your actual Gemini API key:');
+        console.error('GEMINI_API_KEY=your_actual_api_key_here');
+        return false;
+    }
+    
     console.log('✅ Environment configuration validated successfully');
     return true;
 }

@@ -1,4 +1,4 @@
-import { SERVER_CONFIG, ERROR_MESSAGES } from './config/app.config.js';
+import { SERVER_CONFIG, ERROR_MESSAGES, validateEnvironmentConfig } from './config/app.config.js';
 import { queryDB } from './store/sqlite.db.js';
 import mainRoutes from './routes/main.routes.js';
 import dotenv from "dotenv";
@@ -24,6 +24,13 @@ function initializeDatabase() {
 
 // Initialize database
 initializeDatabase();
+
+// Validate environment configuration
+console.log('🔄 Validating environment configuration...');
+if (!validateEnvironmentConfig()) {
+    console.error('❌ Environment validation failed. Please fix the configuration and restart.');
+    process.exit(1);
+}
 
 // Validate port configuration
 if (!port) {
