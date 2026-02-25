@@ -1,5 +1,4 @@
 import { LocalStorage } from "node-localstorage";
-import { generateEmbeddingsForUserPrompt } from "./../vector-operations/embedding.generator.js";
 import { STORAGE_PATHS } from '../config/path.js';
 import { CACHE_CONFIG, LOGGING_CONFIG } from '../config/app.config.js';
 import crypto from "crypto";
@@ -21,7 +20,7 @@ function generatePromptKey(prompt) {
  * @param {string} prompt - User prompt text
  * @param {Array} embedding - Embedding vector
  */
-function storePromptEmbedding(prompt, embedding) {
+export function storePromptEmbedding(prompt, embedding) {
     try {
         const key = generatePromptKey(prompt);
         const data = {
@@ -42,7 +41,7 @@ function storePromptEmbedding(prompt, embedding) {
  * @param {string} prompt - User prompt text
  * @returns {Array|null} Embedding vector or null if not found
  */
-function getStoredPromptEmbedding(prompt) {
+export function getStoredPromptEmbedding(prompt) {
     try {
         const key = generatePromptKey(prompt);
         const stored = localStorage.getItem(`${CACHE_CONFIG.PROMPT_KEY_PREFIX}${key}`);
@@ -57,35 +56,6 @@ function getStoredPromptEmbedding(prompt) {
     } catch (error) {
         console.error("Error retrieving prompt embedding:", error);
         return null;
-    }
-}
-
-/**
- * Get prompt embedding with caching - checks local storage first, then generates if needed
- * @param {string} prompt - User prompt text
- * @returns {Promise<Array>} Embedding vector
- */
-export async function getPromptEmbeddingWithCache(prompt) {
-    try {
-        // First, try to get from local storage
-        const cachedEmbedding = getStoredPromptEmbedding(prompt);
-        
-        if (cachedEmbedding) {
-            return cachedEmbedding;
-        }
-
-        // If not found, generate new embedding and store it
-        console.log("Generating new embedding for prompt...");
-        const newEmbedding = await generateEmbeddingsForUserPrompt(prompt);
-        
-        // Store for future use
-        storePromptEmbedding(prompt, newEmbedding);
-        
-        return newEmbedding;
-
-    } catch (error) {
-        console.error("Error in getPromptEmbeddingWithCache:", error);
-        throw error;
     }
 }
 

@@ -1,6 +1,7 @@
 import { generateAnswerFromLLM } from "./genai.service.js";
 import { findTopSimilarChunks } from "../vector-operations/cosine-similarity-search.js";
-import { getPromptEmbeddingWithCache } from "../store/prompt.cache.js";
+import { getStoredPromptEmbedding, storePromptEmbedding } from "../store/prompt.cache.js";
+import { generateEmbeddingsForUserPrompt } from "../vector-operations/embedding.generator.js";
 import formatPromptForLLM from '../utils/util.js';
 import { FILE_PATHS } from '../config/path.js';
 import { queryDB } from '../store/sqlite.db.js';
@@ -10,51 +11,123 @@ import { queryDB } from '../store/sqlite.db.js';
  */
 class RAGService {
     /**
+     * Check for cached answer in database
+     * @param {string} userPrompt - User's question
+     * @returns {Object|null} Cached query result or null
+     */
+    static checkDatabaseCache(userPrompt) {
+        console.log('🔍 Checking database cache for existing answer...');
+        const cachedQuery = queryDB.findQueryByPrompt(userPrompt);
+        
+        if (cachedQuery) {
+            console.log(`✅ Found cached answer for prompt (ID: ${cachedQuery.queryId})`);
+            return {
+                answer: cachedQuery.answer,
+                queryId: cachedQuery.queryId,
+                finalPrompt: null, // Not available for cached responses
+                metadata: {
+                    cached: true,
+                    originalCreatedAt: cachedQuery.createdAt,
+                    processingTime: new Date().toISOString()
+                }
+            };
+        }
+        
+        return null;
+    }
+
+    /**
+     * Get or generate embedding for user prompt with caching
+     * @param {string} userPrompt - User's question
+     * @returns {Promise<Array>} Prompt embedding vector
+     */
+    static async getPromptEmbedding(userPrompt) {
+        console.log('🔄 Getting prompt embedding...');
+        let promptEmbedding = getStoredPromptEmbedding(userPrompt);
+        
+        if (!promptEmbedding) {
+            console.log('📝 Generating new embedding for prompt...');
+            promptEmbedding = await generateEmbeddingsForUserPrompt(userPrompt);
+            // Cache the new embedding for future use
+            storePromptEmbedding(userPrompt, promptEmbedding);
+        } else {
+            console.log('✅ Using cached embedding for prompt');
+        }
+        
+        return promptEmbedding;
+    }
+
+    /**
+     * Perform vector similarity search to find relevant document chunks
+     * @param {Array} promptEmbedding - Embedding vector for the prompt
+     * @returns {Object} Similarity search results
+     */
+    static findRelevantChunks(promptEmbedding) {
+        console.log('🔍 Finding relevant document chunks...');
+        return findTopSimilarChunks(promptEmbedding, null, FILE_PATHS.TEST_PDF);
+    }
+
+    /**
+     * Generate final answer using LLM with retrieved context
+     * @param {string} userPrompt - Original user question
+     * @param {Object} similarityResult - Retrieved document chunks
+     * @returns {Promise<Object>} LLM response with answer and metadata
+     */
+    static async generateContextualAnswer(userPrompt, similarityResult) {
+        // Format prompt for LLM with context
+        const finalPrompt = formatPromptForLLM(userPrompt, similarityResult);
+        
+        // Get final answer from LLM
+        const llmAnswer = await generateAnswerFromLLM(finalPrompt);
+        console.log('✅ LLM Response received', llmAnswer);
+        
+        return {
+            answer: llmAnswer,
+            finalPrompt: finalPrompt
+        };
+    }
+
+    /**
+     * Save query and answer to database
+     * @param {string} userPrompt - User's question
+     * @param {string} answer - Generated answer
+     * @returns {Object} Saved query information
+     */
+    static saveQueryToDatabase(userPrompt, answer) {
+        const savedQuery = queryDB.insertQuery(userPrompt, answer);
+        console.log(`✅ Query saved with ID: ${savedQuery.queryId}`);
+        return savedQuery;
+    }
+
+    /**
      * Process user prompt through complete RAG pipeline
      * @param {string} userPrompt - User's question
      * @returns {Promise<Object>} Complete RAG response with answer, chunks, etc.
      */
     static async processPrompt(userPrompt) {
         try {
-            // Step 0: Check if we already have this exact prompt in database
-            console.log('🔍 Checking database cache for existing answer...');
-            const cachedQuery = queryDB.findQueryByPrompt(userPrompt);
-            
-            if (cachedQuery) {
-                console.log(`✅ Found cached answer for prompt (ID: ${cachedQuery.queryId})`);
-                return {
-                    answer: cachedQuery.answer,
-                    queryId: cachedQuery.queryId,
-                    finalPrompt: null, // Not available for cached responses
-                    metadata: {
-                        cached: true,
-                        originalCreatedAt: cachedQuery.createdAt,
-                        processingTime: new Date().toISOString()
-                    }
-                };
+            // Step 1: Check database cache first
+            const cachedResult = this.checkDatabaseCache(userPrompt);
+            if (cachedResult) {
+                return cachedResult;
             }
 
             console.log('💭 No cached answer found, processing new query...');
             
-            // Step 1: Get embedding for user prompt (with caching)
-            const promptEmbedding = await getPromptEmbeddingWithCache(userPrompt);
+            // Step 2: Get embedding for user prompt
+            const promptEmbedding = await this.getPromptEmbedding(userPrompt);
 
-            // Step 2: Find top 3 most similar chunks using vector search
-            const similarityResult = findTopSimilarChunks(promptEmbedding, null, FILE_PATHS.TEST_PDF);
+            // Step 3: Find relevant document chunks
+            const similarityResult = this.findRelevantChunks(promptEmbedding);
 
-            // Step 3: Format prompt for LLM with context
-            const finalPrompt = formatPromptForLLM(userPrompt, similarityResult);
+            // Step 4: Generate answer using LLM with context
+            const { answer, finalPrompt } = await this.generateContextualAnswer(userPrompt, similarityResult);
 
-            // Step 4: Get final answer from LLM
-            const llmAnswer = await generateAnswerFromLLM(finalPrompt);
-            console.log('✅ LLM Response received', llmAnswer);
-
-            // Step 5: Store query and answer in database
-            const savedQuery = queryDB.insertQuery(userPrompt, llmAnswer);
-            console.log(`✅ Query saved with ID: ${savedQuery.queryId}`);
+            // Step 5: Save to database
+            const savedQuery = this.saveQueryToDatabase(userPrompt, answer);
 
             return {
-                answer: llmAnswer,
+                answer: answer,
                 queryId: savedQuery.queryId,
                 finalPrompt: finalPrompt,
                 metadata: {
