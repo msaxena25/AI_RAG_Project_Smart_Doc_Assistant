@@ -1,10 +1,8 @@
 import { GoogleGenAI } from "@google/genai";
-import dotenv from "dotenv";
-
-dotenv.config();
+import {GEMINI_CONFIG} from '../config/app.config.js'; 
 
 // Initialize GoogleGenAI instance once
-const apiKey = process.env.GEMINI_API_KEY;
+const apiKey = GEMINI_CONFIG.GEMINI_API_KEY;
 let genAI = null;
 
 if (apiKey) {
@@ -26,7 +24,7 @@ export async function generateEmbeddingFromGenAI(chunk) {
     try {
         const result = await genAI.models.embedContent(
             {
-                model: process.env.GEMINI_MODEL_EMBEDDING,
+                model: GEMINI_CONFIG.GEMINI_MODEL_EMBEDDING,
                 contents: chunk
             }
         );
@@ -48,32 +46,15 @@ export async function generateAnswerFromLLM(prompt) {
     }
 
     try {
-        const modelName = process.env.GEMINI_MODEL_FLASH_PREVIEW;
-        const model = genAI.getGenerativeModel({ model: modelName });
-
-        const result = await model.generateContent(prompt);
-        return result.response.text();
+        const response = await genAI.models.generateContent(
+            {
+                model: GEMINI_CONFIG.GEMINI_MODEL_FLASH_PREVIEW,
+                contents: prompt
+            }
+        );
+        return response.text;
     } catch (error) {
         console.error("Error generating content:", error);
         throw error;
     }
 }
-
-/**
- * List available models
- * @returns {Promise<Array>} - List of available models
- */
-async function listModels() {
-    if (!genAI) {
-        throw new Error("GoogleGenAI not initialized. Check GEMINI_API_KEY.");
-    }
-
-    try {
-        const models = await genAI.listModels();
-        return models;
-    } catch (error) {
-        console.error("Error listing models:", error);
-        throw error;
-    }
-}
-
