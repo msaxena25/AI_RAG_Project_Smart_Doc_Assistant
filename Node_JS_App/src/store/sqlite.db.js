@@ -81,7 +81,7 @@ class QueryDatabase {
             const result = stmt.run(queryId, prompt, answer);
 
             // Maintain only last 10 queries
-            this.maintainQueryLimit();
+            // this.maintainQueryLimit();
 
             // Return the inserted query
             const insertedQuery = this.getQueryById(queryId);

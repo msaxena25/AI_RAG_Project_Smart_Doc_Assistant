@@ -117,7 +117,7 @@ export function findTopSimilarChunks(promptEmbedding, chunkEmbeddings = null, fi
         top3SimilarChunks = topChunks;
 
         // Log results
-        // logSimilarityResults(enrichedTopChunks);
+        logSimilarityResults(top3SimilarChunks);
 
         return formattedChunksPlainText;
 

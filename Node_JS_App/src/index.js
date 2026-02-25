@@ -55,6 +55,7 @@ app.listen(port, () => {
     console.log('  GET  /queries    - Get all stored queries');
     console.log('  GET  /stats      - Get query statistics');
     console.log('  POST /queries/:id/feedback - Update query feedback');
+    console.log('---------------------------------------------------------------');
 });
 
 // Graceful shutdown handlers
