@@ -1,14 +1,29 @@
+import dotenv from "dotenv";
 
+// Load environment variables from .env file
+dotenv.config();
+
+// Environment Configuration (loaded from .env)
+export const ENV_CONFIG = {
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
+    GEMINI_MODEL_FLASH_PREVIEW: process.env.GEMINI_MODEL_FLASH_PREVIEW || 'gemini-3-flash-preview',
+    GEMINI_MODEL_FLASH_LATEST: process.env.GEMINI_MODEL_FLASH_LATEST || 'gemini-1.5-flash-latest',
+    GEMINI_MODEL_EMBEDDING: process.env.GEMINI_MODEL_EMBEDDING || 'gemini-embedding-001',
+    PORT: parseInt(process.env.PORT) || 4100,
+    NODE_ENV: process.env.NODE_ENV || 'development'
+};
+
+// Legacy support (deprecated - use ENV_CONFIG instead)
 export const GEMINI_CONFIG = {
-    GEMINI_API_KEY: 'YOUR_GEMINI_API_KEY',
-    GEMINI_MODEL_FLASH_PREVIEW: 'gemini-3-flash-preview',
-    GEMINI_MODEL_FLASH_LATEST: 'gemini-1.5-flash-latest',
-    GEMINI_MODEL_EMBEDDING: 'gemini-embedding-001'
+    GEMINI_API_KEY: ENV_CONFIG.GEMINI_API_KEY,
+    GEMINI_MODEL_FLASH_PREVIEW: ENV_CONFIG.GEMINI_MODEL_FLASH_PREVIEW,
+    GEMINI_MODEL_FLASH_LATEST: ENV_CONFIG.GEMINI_MODEL_FLASH_LATEST,
+    GEMINI_MODEL_EMBEDDING: ENV_CONFIG.GEMINI_MODEL_EMBEDDING
 };
 
 // Server Configuration
 export const SERVER_CONFIG = {
-    DEFAULT_PORT: 4100,
+    DEFAULT_PORT: ENV_CONFIG.PORT,
     DEFAULT_HOST: 'localhost'
 };
 
@@ -70,3 +85,18 @@ export const LOGGING_CONFIG = {
     MAX_PROMPT_DISPLAY_LENGTH: 50,
     SIMILARITY_SCORE_PRECISION: 4
 };
+
+// Validation function to check if required environment variables are set
+export function validateEnvironmentConfig() {
+    const requiredVars = ['GEMINI_API_KEY'];
+    const missing = requiredVars.filter(varName => !ENV_CONFIG[varName]);
+    
+    if (missing.length > 0) {
+        console.error(`❌ Missing required environment variables: ${missing.join(', ')}`);
+        console.error('Please set these in your .env file or environment variables.');
+        return false;
+    }
+    
+    console.log('✅ Environment configuration validated successfully');
+    return true;
+}
