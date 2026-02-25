@@ -53,7 +53,12 @@ router.get("/process-pdf", async (request, response) => {
         response.json({
             success: true,
             message: "PDF processed successfully",
-            embeddings: embeddings
+            docName: FILE_PATHS.TEST_PDF,
+            embeddings: {
+                count: embeddings.totalEmbeddings,
+                pdfId: embeddings.pdfId,
+                message: embeddings.message
+            }
         });
     } catch (error) {
         console.log("🚀 ~ PDF processing error:", error);

@@ -1,3 +1,4 @@
+import { EMBEDDING_CONFIG } from '../config/app.config.js';
 let textChunks = [];
 
 /**
@@ -6,7 +7,7 @@ let textChunks = [];
  * @param {number} maxChunkSize - Maximum characters per chunk (default 700)
  * @returns {string[]} - Array of text chunks
  */
-export function createTextChunks(text, maxChunkSize = 700) {
+export function createTextChunks(text, maxChunkSize = EMBEDDING_CONFIG.CHUNK_SIZE_LIMIT) {
     textChunks = []; // Reset the global array
 
     if (!text || text.trim() === '') {

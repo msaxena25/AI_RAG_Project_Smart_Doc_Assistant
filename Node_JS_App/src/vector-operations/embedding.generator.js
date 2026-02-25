@@ -1,5 +1,6 @@
 import { generateEmbeddingFromGenAI } from "./../services/genai.service.js";
 import { saveEmbeddingsToFile, listStoredEmbeddings, loadExistingEmbeddings } from "./../store/embedding.store.js";
+import { EMBEDDING_CONFIG } from '../config/app.config.js';
 
 // Global variable to store embeddings
 let chunkEmbeddings = [];
@@ -76,7 +77,7 @@ export function parseEmbeddings(embeddingsArray, pdfId) {
             pdfId: pdfId || null,
             embeddings: embeddingsArray.map(item => ({
                 chunkIndex: item.chunkIndex,
-                textPreview: item.text.substring(0, 50) + "...",
+                textPreview: item.text.substring(0, EMBEDDING_CONFIG.TEXT_PREVIEW_LENGTH) + "...",
                 embeddings: item.embedding
             }))
         };

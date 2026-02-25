@@ -15,7 +15,7 @@ export const SERVER_CONFIG = {
 // Embedding Configuration
 export const EMBEDDING_CONFIG = {
     DEFAULT_TOP_CHUNKS: 3,
-    CHUNK_SIZE_LIMIT: 1000,
+    CHUNK_SIZE_LIMIT: 700,
     TEXT_PREVIEW_LENGTH: 50,
     FULL_TEXT_PREVIEW_LENGTH: 150
 };
