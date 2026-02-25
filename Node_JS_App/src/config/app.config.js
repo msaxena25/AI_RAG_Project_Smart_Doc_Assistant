@@ -1,8 +1,14 @@
-// Application Configuration Constants
+
+export const GEMINI_CONFIG = {
+    GEMINI_API_KEY: 'YOUR_GEMINI_API_KEY',
+    GEMINI_MODEL_FLASH_PREVIEW: 'gemini-3-flash-preview',
+    GEMINI_MODEL_FLASH_LATEST: 'gemini-1.5-flash-latest',
+    GEMINI_MODEL_EMBEDDING: 'gemini-embedding-001'
+};
 
 // Server Configuration
 export const SERVER_CONFIG = {
-    DEFAULT_PORT: 3000,
+    DEFAULT_PORT: 4100,
     DEFAULT_HOST: 'localhost'
 };
 
