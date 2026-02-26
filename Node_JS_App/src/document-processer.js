@@ -1,6 +1,6 @@
 import { PDFParse } from 'pdf-parse';
 import { generateChunkEmbeddings, parseEmbeddings } from "./vector-operations/embedding.generator.js";
-import { generatePdfId } from "./store/embedding.store.js";
+import { generateEmbeddingDocId } from "./store/embedding.store.js";
 import { createTextChunks } from "./services/chunk.generator.js";
 
 /**
@@ -11,11 +11,12 @@ import { createTextChunks } from "./services/chunk.generator.js";
  * @returns {Promise<Object>} A promise that resolves to the parsed embeddings of the PDF.
  */
 export async function processPdf(filePath) {
-    const pdfId = generatePdfId(filePath);
+    console.log("🚀 ~ filePath:", filePath)
+    const embeddingDocId = generateEmbeddingDocId(filePath);
     const texts = await pdfToText(filePath);
     const chunks = createTextChunks(texts);
-    const embeddings = await generateChunkEmbeddings(chunks, filePath, pdfId);
-    const parsedEmbeddings = parseEmbeddings(embeddings, pdfId);
+    const embeddings = await generateChunkEmbeddings(chunks, filePath, embeddingDocId);
+    const parsedEmbeddings = parseEmbeddings(embeddings, embeddingDocId);
     return parsedEmbeddings;
 }
 

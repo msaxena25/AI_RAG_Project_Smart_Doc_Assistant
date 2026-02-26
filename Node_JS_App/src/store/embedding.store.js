@@ -11,7 +11,7 @@ const DATA_DIR = STORAGE_PATHS.EMBEDDINGS;
  * @param {string} filePath - Path to the PDF file
  * @returns {string} - Unique identifier
  */
-export function generatePdfId(filePath) {
+export function generateEmbeddingDocId(filePath) {
     try {
         const fileName = path.basename(filePath);
         const stats = fs.statSync(filePath);
@@ -42,23 +42,20 @@ function ensureDataDirectory() {
 
 /**
  * Save chunks and embeddings to JSON file
- * @param {string} filePath - Path to the PDF file
  * @param {Array} chunks - Array of text chunks
  * @param {Array} embeddings - Array of embeddings
+ * @param {string} embeddingDocId - PDF identifier
  * @returns {string} - Generated PDF ID
  */
-export function saveEmbeddingsToFile(filePath, chunks, embeddings, pdfId) {
+export function saveEmbeddingsToFile(chunks, embeddings, embeddingDocId) {
     try {
         ensureDataDirectory();
-
-        const id = pdfId || generatePdfId(filePath); // Use passed pdfId or generate if not provided
-        const fileName = `${id}.json`;
+        const fileName = `${embeddingDocId}.json`;
         const outputPath = path.join(DATA_DIR, fileName);
 
         // Prepare data structure
         const data = {
-            pdfId: path.basename(filePath),
-            originalPath: filePath,
+            embeddingDocId: embeddingDocId,
             createdAt: new Date().toISOString(),
             chunks: chunks.map((chunk, index) => ({
                 text: chunk,
@@ -81,13 +78,13 @@ export function saveEmbeddingsToFile(filePath, chunks, embeddings, pdfId) {
 /**
  * Load existing embeddings from file if they exist
  * @param {string} filePath - Path to the original PDF file
- * @param {string} pdfId - PDF identifier
+ * @param {string} embeddingDocId - PDF identifier
  * @returns {Array|null} - Existing embeddings or null if not found
  */
-export function loadExistingEmbeddings(filePath, pdfId) {
-    if (filePath && embeddingsExist(filePath)) {
-        console.log(`Loading existing embeddings for: ${pdfId}`);
-        const existingData = loadEmbeddingsFromFile(pdfId);
+export function loadExistingEmbeddings(embeddingDocId) {
+    if (embeddingsExist(embeddingDocId)) {
+        console.log(`Loading existing embeddings for: ${embeddingDocId}`);
+        const existingData = loadEmbeddingsFromFile(embeddingDocId);
 
         if (existingData && existingData.chunks) {
             const loadedEmbeddings = existingData.chunks.map((chunk, index) => ({
@@ -104,12 +101,12 @@ export function loadExistingEmbeddings(filePath, pdfId) {
 
 /**
  * Load embeddings from JSON file
- * @param {string} pdfId - PDF identifier
+ * @param {string} embeddingDocId - PDF identifier
  * @returns {Object|null} - Loaded embeddings data or null if not found
  */
-export function loadEmbeddingsFromFile(pdfId) {
+export function loadEmbeddingsFromFile(embeddingDocId) {
     try {
-        const fileName = `${pdfId}.json`;
+        const fileName = `${embeddingDocId}.json`;
         const filePath = path.join(DATA_DIR, fileName);
 
         if (!fs.existsSync(filePath)) {
@@ -129,9 +126,8 @@ export function loadEmbeddingsFromFile(pdfId) {
  * @param {string} filePath - Path to the PDF file
  * @returns {boolean} - True if embeddings exist
  */
-export function embeddingsExist(filePath) {
-    const pdfId = generatePdfId(filePath);
-    const fileName = `${pdfId}.json`;
+export function embeddingsExist(embeddingDocId) {
+    const fileName = `${embeddingDocId}.json`;
     const embeddingPath = path.join(DATA_DIR, fileName);
     return fs.existsSync(embeddingPath);
 }
@@ -155,12 +151,12 @@ export function listStoredEmbeddings() {
 
 /**
  * Delete embedding file
- * @param {string} pdfId - PDF identifier
+ * @param {string} embeddingDocId - PDF identifier
  * @returns {boolean} - True if deleted successfully
  */
-export function deleteEmbeddings(pdfId) {
+export function deleteEmbeddings(embeddingDocId) {
     try {
-        const fileName = `${pdfId}.json`;
+        const fileName = `${embeddingDocId}.json`;
         const filePath = path.join(DATA_DIR, fileName);
 
         if (fs.existsSync(filePath)) {

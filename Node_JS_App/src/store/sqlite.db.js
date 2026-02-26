@@ -64,7 +64,7 @@ class SQLLiteDB {
                 mimeType TEXT,
                 uploadedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
                 processedAt DATETIME,
-                pdfId TEXT,
+                embeddingDocId TEXT,
                 totalEmbeddings INTEGER DEFAULT 0,
                 isDeleted INTEGER DEFAULT 0 CHECK (isDeleted IN (0, 1))
             )
@@ -402,7 +402,7 @@ class SQLLiteDB {
      */
     getDocumentById(docId) {
         const selectSQL = `
-            SELECT docId, originalName, storedFileName, filePath, fileSize, mimeType, uploadedAt, processedAt, pdfId, totalEmbeddings, isDeleted
+            SELECT docId, originalName, storedFileName, filePath, fileSize, mimeType, uploadedAt, processedAt, embeddingDocId, totalEmbeddings, isDeleted
             FROM documents 
             WHERE docId = ? AND isDeleted = 0
         `;
@@ -423,7 +423,7 @@ class SQLLiteDB {
      */
     getAllDocuments() {
         const selectSQL = `
-            SELECT docId, originalName, storedFileName, filePath, fileSize, mimeType, uploadedAt, processedAt, pdfId, totalEmbeddings
+            SELECT docId, originalName, storedFileName, filePath, fileSize, mimeType, uploadedAt, processedAt, embeddingDocId, totalEmbeddings
             FROM documents 
             WHERE isDeleted = 0
             ORDER BY uploadedAt DESC
@@ -442,20 +442,20 @@ class SQLLiteDB {
     /**
      * Update document metadata after processing
      * @param {string} docId - Document ID
-     * @param {object} updateData - {pdfId, totalEmbeddings, processedAt}
+     * @param {object} updateData - {embeddingDocId, totalEmbeddings, processedAt}
      * @returns {boolean} Success status
      */
     updateDocumentAfterProcessing(docId, updateData) {
-        const { pdfId, totalEmbeddings } = updateData;
+        const { embeddingDocId, totalEmbeddings } = updateData;
         const updateSQL = `
             UPDATE documents 
-            SET pdfId = ?, totalEmbeddings = ?, processedAt = datetime('now')
+            SET embeddingDocId = ?, totalEmbeddings = ?, processedAt = datetime('now')
             WHERE docId = ? AND isDeleted = 0
         `;
 
         try {
             const stmt = this.db.prepare(updateSQL);
-            const result = stmt.run(pdfId || null, totalEmbeddings || 0, docId);
+            const result = stmt.run(embeddingDocId || null, totalEmbeddings || 0, docId);
 
             const success = result.changes > 0;
             if (success) {

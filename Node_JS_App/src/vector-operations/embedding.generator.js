@@ -11,18 +11,17 @@ let chunkEmbeddings = [];
  * Generate embeddings for text chunks, leveraging existing embeddings if available.
  * @param {Array} chunks - Array of text chunks to generate embeddings for.
  * @param {string} filePath - Path to the file for saving/loading embeddings.
- * @param {string} pdfId - Identifier for the associated PDF.
+ * @param {string} embeddingDocId - Identifier for the associated PDF.
  * @returns {Promise<Array>} - Array of generated or loaded embeddings.
  */
-export async function generateChunkEmbeddings(chunks, filePath, pdfId) {
+export async function generateChunkEmbeddings(chunks, filePath, embeddingDocId) {
     try {
         // Attempt to load existing embeddings
-        const existingEmbeddings = loadExistingEmbeddings(filePath, pdfId);
+        const existingEmbeddings = loadExistingEmbeddings(embeddingDocId);
         if (existingEmbeddings) {
             chunkEmbeddings = existingEmbeddings;
             return chunkEmbeddings;
         }
-        return [];
 
         chunkEmbeddings = []; // Reset global embeddings
 
@@ -41,7 +40,7 @@ export async function generateChunkEmbeddings(chunks, filePath, pdfId) {
 
         // Save embeddings to file if a file path is provided
         if (filePath) {
-            saveEmbeddingsToFile(filePath, chunks, chunkEmbeddings, pdfId);
+            saveEmbeddingsToFile(chunks, chunkEmbeddings, embeddingDocId);
         }
 
         return chunkEmbeddings;
@@ -65,16 +64,16 @@ export function getChunkEmbeddings() {
  * Parses an array of embeddings and returns a structured response.
  *
  * @param {Array} embeddingsArray - Array of embedding objects, each containing `chunkIndex`, `text`, and `embedding`.
- * @param {string} [pdfId] - Optional identifier for the associated PDF.
+ * @param {string} [embeddingDocId] - Optional identifier for the associated PDF.
  * @returns {Object} Parsed embeddings data or an error message.
  */
-export function parseEmbeddings(embeddingsArray, pdfId) {
+export function parseEmbeddings(embeddingsArray, embeddingDocId) {
     try {
 
         return {
             message: "Embeddings generated successfully",
             totalEmbeddings: embeddingsArray.length,
-            pdfId: pdfId || null,
+            embeddingDocId: embeddingDocId || null,
             embeddings: embeddingsArray.map(item => ({
                 chunkIndex: item.chunkIndex,
                 textPreview: item.text.substring(0, EMBEDDING_CONFIG.TEXT_PREVIEW_LENGTH) + "...",
@@ -108,10 +107,10 @@ export function loadChunkEmbeddingsFromFile(filePath) {
         }
 
         // Get the most recent PDF embeddings (first in the list)
-        const latestPdfId = storedEmbeddings[0];
+        const latestembeddingDocId = storedEmbeddings[0];
 
 
-        const loadedEmbeddings = loadExistingEmbeddings(filePath, latestPdfId);
+        const loadedEmbeddings = loadExistingEmbeddings(filePath, latestembeddingDocId);
 
         if (loadedEmbeddings && loadedEmbeddings.length > 0) {
             return loadedEmbeddings;

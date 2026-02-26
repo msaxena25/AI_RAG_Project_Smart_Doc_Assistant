@@ -20,7 +20,7 @@ const storage = multer.diskStorage({
     filename: function (req, file, cb) {
         // Generate unique filename
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+        cb(null, file.originalname + '-' + uniqueSuffix + path.extname(file.originalname));
     }
 });
 
@@ -74,7 +74,7 @@ router.post("/upload", upload.single('document'), async (request, response) => {
 
         // Update document with processing results
         sqliteDB.updateDocumentAfterProcessing(insertedDoc.docId, {
-            pdfId: embeddings.pdfId,
+            embeddingDocId: embeddings.embeddingDocId,
             totalEmbeddings: embeddings.totalEmbeddings
         });
 
@@ -87,7 +87,7 @@ router.post("/upload", upload.single('document'), async (request, response) => {
             fileSize: request.file.size,
             embeddings: {
                 count: embeddings.totalEmbeddings,
-                pdfId: embeddings.pdfId,
+                embeddingDocId: embeddings.embeddingDocId,
                 message: embeddings.message
             }
         });
