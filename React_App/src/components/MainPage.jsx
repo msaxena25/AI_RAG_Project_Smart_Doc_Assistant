@@ -16,11 +16,7 @@ import { documentAPI } from '../services/api';
 import QueryList from './QueryList';
 
 const MainPage = () => {
-    const [activeTab, setActiveTab] = useState('upload');
-    const [uploadedDocument, setUploadedDocument] = useState(null);
     const [showUploadForm, setShowUploadForm] = useState(true);
-    const [queries, setQueries] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
     const [hasUploadedDoc, setHasUploadedDoc] = useState(false); // Define the missing state
     const [uploadStatus, setUploadStatus] = useState(''); // Additional state for upload feedback
     const [currentQuery, setCurrentQuery] = useState('');
@@ -28,11 +24,10 @@ const MainPage = () => {
     const [documentList, setDocumentList] = useState([]); // State to hold list of all documents
     const [bottomTab, setBottomTab] = useState('documents');
     const [selectedQuery, setSelectedQuery] = useState(null);
+    const [selectedDocument, setSelectedDocument] = useState(null);
 
     // Check if document has been processed on component mount
     useEffect(() => {
-        // checkDocumentStatus();
-        //loadQueryHistory();
         getAllDocuments(); // Fetch all documents on mount
     }, []);
 
@@ -40,8 +35,9 @@ const MainPage = () => {
         try {
             const response = await documentAPI.getAllDocuments();
             if (response.success) {
-                setShowUploadForm(false);// Hide upload form if documents exist
-                setDocumentList(response.data.documents || []);
+                const data = response.data.documents || [];
+                setShowUploadForm(data.length === 0); // Hide upload form if documents exist
+                setDocumentList(data);
             } else {
                 console.error('Failed to fetch documents:', response.error);
                 return [];
@@ -118,7 +114,6 @@ const MainPage = () => {
     const onDocumentUploaded = (data) => {
         getAllDocuments(); // Refresh document list after upload
         setShowUploadForm(false);
-        setUploadedDocument(data);
     }
 
     const handleCloseDocumentUploadSection = () => {
@@ -128,6 +123,14 @@ const MainPage = () => {
     const handleUploadNew = () => {
         setShowUploadForm(true);
     }
+
+    // Document click handler
+    const handleSelectDocument = (doc) => {
+        setSelectedDocument(doc);
+        console.log("🚀 ~ doc:", doc)
+        // You can use doc.originalName and doc.docId here as needed
+        // Example: console.log('Selected document:', doc.originalName, doc.docId);
+    };
 
     return (
         <div className="main-page">
@@ -150,20 +153,25 @@ const MainPage = () => {
                             ) : (
                                 <div className="uploaded-document-view">
                                     {/* Uploaded Document Info */}
-                                    <div className="uploaded-doc-info">
+                                    <div>
                                         <div className="doc-status">
                                             <div className="doc-details">
                                                 {documentList.length > 0 ? (
                                                     <div className="document-list">
                                                         {documentList.map((doc, index) => (
-                                                            <div key={index}>
+                                                            <div
+                                                                key={doc.docId || index}
+                                                                className={`document-item${selectedDocument && selectedDocument.docId === doc.docId ? ' selected' : ''}`}
+                                                                onClick={() => handleSelectDocument(doc)}
+                                                                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '10px' }}
+                                                            >
                                                                 <CheckCircle size={10} />
-                                                                {doc.originalName}
+                                                                <span>{doc.originalName}</span>
                                                             </div>
                                                         ))}
                                                     </div>
                                                 ) : (
-                                                    <p>No documents uploaded yet.</p>
+                                                    <p>No documents uploaded yet. First upload a document to get started.</p>
                                                 )}
                                             </div>
                                         </div>
@@ -196,7 +204,7 @@ const MainPage = () => {
                             className={`tab-button${bottomTab === 'queries' ? ' active' : ''}`}
                             onClick={() => setBottomTab('queries')}
                         >
-                            <span className="tab-label">Query List</span>
+                            <span className="tab-label">Recent Queries</span>
                         </button>
                     </div>
                 </div>
@@ -214,7 +222,6 @@ const MainPage = () => {
             </div>
             {/* Bottom Tabs */}
             <div className="main-footer">
-
                 <div className="footer-info">
                     <p>Powered by Gemini AI & RAG Technology</p>
                 </div>
