@@ -5,12 +5,12 @@
  */
 
 import { useState, useRef } from 'react';
-import { 
-  Upload, 
-  FileText, 
-  AlertCircle, 
-  CheckCircle, 
-  Loader2, 
+import {
+  Upload,
+  FileText,
+  AlertCircle,
+  CheckCircle,
+  Loader2,
   X,
   File
 } from 'lucide-react';
@@ -18,14 +18,14 @@ import { documentAPI } from '../services/api';
 import { validateFile, formatFileSize, generateFilePreview } from '../utils/fileUtils';
 import './DocumentUpload.css';
 
-const DocumentUpload = ({ onDocumentUploaded }) => {
+const DocumentUpload = ({ onDocumentUploaded, onClose, compact = false }) => {
   const [file, setFile] = useState(null);
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [validationErrors, setValidationErrors] = useState([]);
   const [uploadResult, setUploadResult] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
-  
+
   const fileInputRef = useRef(null);
 
   /**
@@ -36,7 +36,7 @@ const DocumentUpload = ({ onDocumentUploaded }) => {
 
     // Validate file
     const validation = validateFile(selectedFile);
-    
+
     if (!validation.isValid) {
       setValidationErrors(validation.errors);
       setFile(null);
@@ -109,7 +109,7 @@ const DocumentUpload = ({ onDocumentUploaded }) => {
       console.log('📤 Calling documentAPI.processPDF...');
       const result = await documentAPI.processPDF(file);
       console.log('📥 Upload result:', result);
-      
+
       clearInterval(progressInterval);
       setUploadProgress(100);
 
@@ -120,11 +120,16 @@ const DocumentUpload = ({ onDocumentUploaded }) => {
           message: 'Document processed successfully!',
           data: result.data,
         });
-        
+
         // Notify parent component of successful upload
         if (onDocumentUploaded) {
           console.log('🔔 Notifying parent of successful upload');
-          onDocumentUploaded(result.data);
+          onDocumentUploaded({
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            result: result.data
+          });
         }
       } else {
         console.error('❌ Upload failed:', result.error);
@@ -146,15 +151,18 @@ const DocumentUpload = ({ onDocumentUploaded }) => {
   };
 
   /**
-   * Reset upload state
+   * Close upload form and reset state
    */
-  const handleReset = () => {
+  const handleClose = () => {
     setFile(null);
     setValidationErrors([]);
     setUploadResult(null);
     setUploadProgress(0);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+    if (onClose) {
+      onClose();
     }
   };
 
@@ -220,12 +228,12 @@ const DocumentUpload = ({ onDocumentUploaded }) => {
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                handleReset();
+                handleClose();
               }}
               className="remove-file"
               aria-label="Remove file"
             >
-              <X />
+              X
             </button>
           </div>
         )}
@@ -247,8 +255,8 @@ const DocumentUpload = ({ onDocumentUploaded }) => {
       {uploading && (
         <div className="upload-progress">
           <div className="progress-bar">
-            <div 
-              className="progress-fill" 
+            <div
+              className="progress-fill"
               style={{ width: `${uploadProgress}%` }}
             ></div>
           </div>
@@ -295,16 +303,14 @@ const DocumentUpload = ({ onDocumentUploaded }) => {
             </>
           )}
         </button>
+        <button
+          type="button"
+          onClick={handleClose}
+          className="reset-button"
+        >
+          Close
+        </button>
 
-        {file && !uploading && (
-          <button
-            type="button"
-            onClick={handleReset}
-            className="reset-button"
-          >
-            Choose Different File
-          </button>
-        )}
       </div>
     </div>
   );

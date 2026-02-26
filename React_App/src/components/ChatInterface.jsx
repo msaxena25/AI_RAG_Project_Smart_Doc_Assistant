@@ -60,6 +60,7 @@ const ChatInterface = () => {
     setIsLoading(true);
     setError(null);
 
+
     try {
       // Call the query API
       const response = await queryDocument(userMessage.content);

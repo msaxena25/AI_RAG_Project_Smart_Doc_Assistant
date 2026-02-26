@@ -150,6 +150,21 @@ export const documentAPI = {
     }
   },
 
+  async getAllDocuments() {
+    try {
+      const response = await apiClient.get('/documents');
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  },
+
   /**
    * Get query statistics
    * @returns {Promise<Object>} Statistics

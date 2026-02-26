@@ -5,111 +5,213 @@
  * Allows users to upload documents and then chat with them
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DocumentUpload from './DocumentUpload';
 import ChatInterface from './ChatInterface';
-import { FileText, MessageCircle, Home } from 'lucide-react';
+import { FileText, MessageCircle, Upload, CheckCircle } from 'lucide-react';
+import { formatFileSize } from '../utils/fileUtils';
 import './MainPage.css';
+import { API_ENDPOINTS } from '../config/api';
+import { documentAPI } from '../services/api';
 
 const MainPage = () => {
-  const [activeTab, setActiveTab] = useState('upload');
-  const [hasUploadedDoc, setHasUploadedDoc] = useState(false);
+    const [activeTab, setActiveTab] = useState('upload');
+    const [uploadedDocument, setUploadedDocument] = useState(null);
+    const [showUploadForm, setShowUploadForm] = useState(true);
+    const [queries, setQueries] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [hasUploadedDoc, setHasUploadedDoc] = useState(false); // Define the missing state
+    const [uploadStatus, setUploadStatus] = useState(''); // Additional state for upload feedback
+    const [currentQuery, setCurrentQuery] = useState('');
+    const [error, setError] = useState('');
+    const [documentList, setDocumentList] = useState([]); // State to hold list of all documents
 
-  // Handle successful document upload
-  const handleDocumentUploaded = () => {
-    setHasUploadedDoc(true);
-    // Auto-switch to chat after successful upload
-    setActiveTab('chat');
-  };
+    // Check if document has been processed on component mount
+    useEffect(() => {
+        // checkDocumentStatus();
+        //loadQueryHistory();
+        getAllDocuments(); // Fetch all documents on mount
+    }, []);
 
-  // Tab configuration
-  const tabs = [
-    {
-      id: 'upload',
-      label: 'Upload Documents',
-      icon: FileText,
-      component: <DocumentUpload onDocumentUploaded={handleDocumentUploaded} />,
-      description: 'Upload PDF or text documents to get started'
-    },
-    {
-      id: 'chat',
-      label: 'Chat with AI',
-      icon: MessageCircle,
-      component: <ChatInterface />,
-      description: 'Ask questions about your uploaded documents',
-      disabled: !hasUploadedDoc
+    const getAllDocuments = async () => {
+        try {
+            const response = await documentAPI.getAllDocuments();
+            if (response.success) {
+                setShowUploadForm(false);// Hide upload form if documents exist
+                setDocumentList(response.data.documents || []);
+            } else {
+                console.error('Failed to fetch documents:', response.error);
+                return [];
+            }
+        } catch (error) {
+            console.error('Error fetching documents:', error);
+            return [];
+        }
     }
-  ];
 
-  return (
-    <div className="main-page">
-      {/* Navigation Header */}
-      <div className="main-nav">
-        <div className="nav-header">
-          <div className="nav-title">
-            <Home size={24} />
-            <h1>AI Document Assistant</h1>
-          </div>
-          
-          <div className="nav-subtitle">
-            <p>Upload documents and chat with AI to get instant answers</p>
-          </div>
-        </div>
+    /**
+     * Check if a document has been uploaded and processed
+     */
+    const checkDocumentStatus = async () => {
+        try {
+            // You might want to add an endpoint to check document status
+            // For now, we'll check if there are any queries (indicating document processing)
+            const response = await fetch(`${API_ENDPOINTS.BASE_URL}/stats`, {
+                headers: {
+                    'X-API-Key': import.meta.env.VITE_API_KEY
+                }
+            });
 
-        {/* Tab Navigation */}
-        <div className="tab-navigation">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => !tab.disabled && setActiveTab(tab.id)}
-                className={`tab-button ${
-                  activeTab === tab.id ? 'active' : ''
-                } ${tab.disabled ? 'disabled' : ''}`}
-                disabled={tab.disabled}
-              >
-                <Icon size={20} />
-                <span className="tab-label">{tab.label}</span>
-                {tab.disabled && (
-                  <span className="disabled-badge">Upload first</span>
-                )}
-              </button>
+            if (response.ok) {
+                const data = await response.json();
+                setHasUploadedDoc(data.stats?.totalQueries > 0 || false);
+            }
+        } catch (error) {
+            console.error('Error checking document status:', error);
+            // Assume no document if we can't check
+            setHasUploadedDoc(false);
+        }
+    };
+
+    /**
+     * Handle feedback submission
+     */
+    const handleFeedback = async (queryId, feedbackType) => {
+        try {
+            const feedback = {
+                [feedbackType]: true,
+                [feedbackType === 'liked' ? 'disliked' : 'liked']: false
+            };
+
+            const response = await fetch(
+                `${API_ENDPOINTS.BASE_URL}/queries/${queryId}/feedback`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': import.meta.env.VITE_API_KEY
+                    },
+                    body: JSON.stringify(feedback)
+                }
             );
-          })}
-        </div>
 
-        {/* Tab Description */}
-        <div className="tab-description">
-          <p>{tabs.find(tab => tab.id === activeTab)?.description}</p>
-        </div>
-      </div>
+            if (response.ok) {
+                // Update the query in the local state
+                setQueries(prevQueries =>
+                    prevQueries.map(query =>
+                        query.id === queryId
+                            ? { ...query, ...feedback }
+                            : query
+                    )
+                );
+            } else {
+                console.error('Failed to submit feedback');
+            }
+        } catch (error) {
+            console.error('Feedback error:', error);
+        }
+    };
 
-      {/* Content Area */}
-      <div className="main-content">
-        {tabs.find(tab => tab.id === activeTab)?.component}
-      </div>
+    const onDocumentUploaded = (data) => {
+        getAllDocuments(); // Refresh document list after upload
+        setShowUploadForm(false);
+        setUploadedDocument(data);
+    }
 
-      {/* Status Footer */}
-      <div className="main-footer">
-        <div className="status-indicators">
-          <div className={`status-item ${hasUploadedDoc ? 'active' : ''}`}>
-            <div className="status-dot"></div>
-            <span>Document {hasUploadedDoc ? 'Ready' : 'Needed'}</span>
-          </div>
-          
-          <div className={`status-item ${activeTab === 'chat' ? 'active' : ''}`}>
-            <div className="status-dot"></div>
-            <span>Chat {activeTab === 'chat' ? 'Active' : 'Available'}</span>
-          </div>
+    const handleCloseDocumentUploadSection = () => {
+        setShowUploadForm(false);
+    }
+
+    const handleUploadNew = () => {
+        setShowUploadForm(true);
+    }
+
+    return (
+        <div className="main-page">
+            {/* Content Area - Always Split Layout */}
+            <div className="main-content split-layout">
+                {/* Upload Panel (Left) */}
+                <div className="upload-panel">
+                    <div className="panel-header">
+                        <FileText size={20} />
+                        <h3>Document Management</h3>
+                    </div>
+                    <div className="panel-content">
+                        {showUploadForm ? (
+                            <DocumentUpload
+                                compact={true}
+                                onDocumentUploaded={onDocumentUploaded}
+                                onClose={handleCloseDocumentUploadSection}
+                            />
+                        ) : (
+                            <div className="uploaded-document-view">
+                                {/* Uploaded Document Info */}
+                                <div className="uploaded-doc-info">
+                                    <div className="doc-status">
+
+                                        <div className="doc-details">
+                                            {documentList.length > 0 ? (
+                                                <div className="document-list">
+                                                    {documentList.map((doc, index) => (
+                                                        <div key={index}>
+
+                                                            <CheckCircle size={10} />
+                                                            {doc.originalName}</div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <p>No documents uploaded yet.</p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="doc-checkbox">
+                                        <input
+                                            type="checkbox"
+                                            id="doc-selected"
+                                            checked={true}
+                                            readOnly
+                                        />
+                                        <label htmlFor="doc-selected">Selected for chat</label>
+                                    </div>
+                                </div>
+
+                                {/* Upload New Document Button */}
+                                <div className="upload-new-section">
+                                    <button
+                                        type="button"
+                                        onClick={handleUploadNew}
+                                        className="upload-new-btn"
+                                    >
+                                        <Upload size={16} />
+                                        Upload New Document
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Chat Panel (Right) */}
+                <div className="chat-panel">
+                    <div className="panel-header">
+                        <MessageCircle size={20} />
+                        <h3>Chat with AI</h3>
+                    </div>
+                    <div className="panel-content">
+                        <ChatInterface />
+                    </div>
+                </div>
+            </div>
+
+            {/* Status Footer */}
+            <div className="main-footer">
+                <div className="footer-info">
+                    <p>Powered by Gemini AI & RAG Technology</p>
+                </div>
+            </div>
         </div>
-        
-        <div className="footer-info">
-          <p>Powered by Gemini AI & RAG Technology</p>
-        </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default MainPage;
