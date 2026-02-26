@@ -1,34 +1,9 @@
 import fs from "fs";
 import path from "path";
-import crypto from "crypto";
 import { STORAGE_PATHS } from '../config/path.js';
 
 // Embeddings directory path
 const DATA_DIR = STORAGE_PATHS.EMBEDDINGS;
-
-/**
- * Generate unique identifier for a PDF file based on name and size
- * @param {string} filePath - Path to the PDF file
- * @returns {string} - Unique identifier
- */
-export function generateEmbeddingDocId(filePath) {
-    try {
-        const fileName = path.basename(filePath);
-        const stats = fs.statSync(filePath);
-        const fileSize = stats.size;
-
-        // Create hash from filename and size for uniqueness
-        const hash = crypto.createHash('md5')
-            .update(`${fileName}-${fileSize}`)
-            .digest('hex')
-            .substring(0, 8);
-
-        return `${path.parse(fileName).name}_${hash}`;
-    } catch (error) {
-        console.error("Error generating PDF ID:", error);
-        return path.basename(filePath, path.extname(filePath));
-    }
-}
 
 /**
  * Ensure data directory exists
@@ -67,7 +42,7 @@ export function saveEmbeddingsToFile(chunks, embeddings, embeddingDocId) {
         fs.writeFileSync(outputPath, JSON.stringify(data, null, 2));
         console.log(`Embeddings saved to: ${outputPath}`);
 
-        return id;
+        return embeddingDocId;
     } catch (error) {
         console.error("Error saving embeddings:", error);
         throw error;
