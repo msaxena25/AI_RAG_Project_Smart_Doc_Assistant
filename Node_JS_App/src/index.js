@@ -1,6 +1,7 @@
 import { SERVER_CONFIG, ERROR_MESSAGES, validateEnvironmentConfig } from './config/app.config.js';
 import { sqliteDB } from './store/sqlite.db.js';
-import mainRoutes from './routes/main.routes.js';
+import documentRoutes from './routes/documents.routes.js';
+import queryRoutes from './routes/query.routes.js';
 import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
@@ -48,7 +49,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.use('/', mainRoutes);
+app.use('/documents', documentRoutes);
+app.use('/', queryRoutes);
 
 // Start server
 app.listen(port, () => {
