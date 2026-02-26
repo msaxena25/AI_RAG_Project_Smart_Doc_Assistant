@@ -39,10 +39,10 @@ class QueryDatabase {
     }
 
     /**
-     * Create user_queries table
+     * Create user_queries and documents tables
      */
     createTable() {
-        const createTableSQL = `
+        const createQueriesTableSQL = `
             CREATE TABLE IF NOT EXISTS user_queries (
                 queryId TEXT PRIMARY KEY,
                 prompt TEXT NOT NULL,
@@ -54,9 +54,27 @@ class QueryDatabase {
             )
         `;
 
+        const createDocumentsTableSQL = `
+            CREATE TABLE IF NOT EXISTS documents (
+                docId TEXT PRIMARY KEY,
+                originalName TEXT NOT NULL,
+                storedFileName TEXT NOT NULL,
+                filePath TEXT NOT NULL,
+                fileSize INTEGER,
+                mimeType TEXT,
+                uploadedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+                processedAt DATETIME,
+                pdfId TEXT,
+                totalEmbeddings INTEGER DEFAULT 0,
+                isDeleted INTEGER DEFAULT 0 CHECK (isDeleted IN (0, 1))
+            )
+        `;
+
         try {
-            this.db.exec(createTableSQL);
+            this.db.exec(createQueriesTableSQL);
             console.log('✅ user_queries table created/verified');
+            this.db.exec(createDocumentsTableSQL);
+            console.log('✅ documents table created/verified');
         } catch (error) {
             console.error('❌ Failed to create table:', error);
             throw error;
@@ -341,6 +359,163 @@ class QueryDatabase {
             return true;
         } catch (error) {
             console.error('❌ Failed to truncate table:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Insert a new document record
+     * @param {object} docData - Document metadata {originalName, storedFileName, filePath, fileSize, mimeType}
+     * @returns {object} Inserted document data
+     */
+    insertDocument(docData) {
+        const docId = uuidv4();
+        const insertSQL = `
+            INSERT INTO documents (docId, originalName, storedFileName, filePath, fileSize, mimeType, uploadedAt)
+            VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+        `;
+
+        try {
+            const stmt = this.db.prepare(insertSQL);
+            stmt.run(
+                docId,
+                docData.originalName,
+                docData.storedFileName,
+                docData.filePath,
+                docData.fileSize || 0,
+                docData.mimeType || 'application/pdf'
+            );
+
+            const insertedDoc = this.getDocumentById(docId);
+            console.log(`✅ Document inserted with ID: ${docId}`);
+            return insertedDoc;
+        } catch (error) {
+            console.error('❌ Failed to insert document:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get document by ID
+     * @param {string} docId - Document ID
+     * @returns {object|null} Document data or null if not found
+     */
+    getDocumentById(docId) {
+        const selectSQL = `
+            SELECT docId, originalName, storedFileName, filePath, fileSize, mimeType, uploadedAt, processedAt, pdfId, totalEmbeddings, isDeleted
+            FROM documents 
+            WHERE docId = ? AND isDeleted = 0
+        `;
+
+        try {
+            const stmt = this.db.prepare(selectSQL);
+            const result = stmt.get(docId);
+            return result || null;
+        } catch (error) {
+            console.error('❌ Failed to get document by ID:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get all uploaded documents
+     * @returns {array} Array of document objects
+     */
+    getAllDocuments() {
+        const selectSQL = `
+            SELECT docId, originalName, storedFileName, filePath, fileSize, mimeType, uploadedAt, processedAt, pdfId, totalEmbeddings
+            FROM documents 
+            WHERE isDeleted = 0
+            ORDER BY uploadedAt DESC
+        `;
+
+        try {
+            const stmt = this.db.prepare(selectSQL);
+            const results = stmt.all();
+            return results;
+        } catch (error) {
+            console.error('❌ Failed to get all documents:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Update document metadata after processing
+     * @param {string} docId - Document ID
+     * @param {object} updateData - {pdfId, totalEmbeddings, processedAt}
+     * @returns {boolean} Success status
+     */
+    updateDocumentAfterProcessing(docId, updateData) {
+        const { pdfId, totalEmbeddings } = updateData;
+        const updateSQL = `
+            UPDATE documents 
+            SET pdfId = ?, totalEmbeddings = ?, processedAt = datetime('now')
+            WHERE docId = ? AND isDeleted = 0
+        `;
+
+        try {
+            const stmt = this.db.prepare(updateSQL);
+            const result = stmt.run(pdfId || null, totalEmbeddings || 0, docId);
+
+            const success = result.changes > 0;
+            if (success) {
+                console.log(`✅ Document metadata updated for ID: ${docId}`);
+            } else {
+                console.log(`⚠️ No document found to update with ID: ${docId}`);
+            }
+            return success;
+        } catch (error) {
+            console.error('❌ Failed to update document:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Soft delete a document
+     * @param {string} docId - Document ID
+     * @returns {boolean} Success status
+     */
+    deleteDocument(docId) {
+        const deleteSQL = `
+            UPDATE documents 
+            SET isDeleted = 1
+            WHERE docId = ? AND isDeleted = 0
+        `;
+
+        try {
+            const stmt = this.db.prepare(deleteSQL);
+            const result = stmt.run(docId);
+
+            const success = result.changes > 0;
+            if (success) {
+                console.log(`✅ Document soft deleted with ID: ${docId}`);
+            } else {
+                console.log(`⚠️ No document found to delete with ID: ${docId}`);
+            }
+            return success;
+        } catch (error) {
+            console.error('❌ Failed to delete document:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get document count
+     * @returns {number} Total count of non-deleted documents
+     */
+    getDocumentCount() {
+        const countSQL = `
+            SELECT COUNT(*) as count
+            FROM documents 
+            WHERE isDeleted = 0
+        `;
+
+        try {
+            const stmt = this.db.prepare(countSQL);
+            const result = stmt.get();
+            return result.count || 0;
+        } catch (error) {
+            console.error('❌ Failed to get document count:', error);
             throw error;
         }
     }

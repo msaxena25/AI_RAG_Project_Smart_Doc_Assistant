@@ -101,11 +101,30 @@ router.post("/process-pdf", upload.single('document'), async (request, response)
         // Process the uploaded PDF file
         const embeddings = await processPdf(request.file.path);
         
+        // Store document metadata in SQLite
+        const docData = {
+            originalName: request.file.originalname,
+            storedFileName: request.file.filename,
+            filePath: request.file.path,
+            fileSize: request.file.size,
+            mimeType: request.file.mimetype
+        };
+
+        const insertedDoc = queryDB.insertDocument(docData);
+
+        // Update document with processing results
+        queryDB.updateDocumentAfterProcessing(insertedDoc.docId, {
+            pdfId: embeddings.pdfId,
+            totalEmbeddings: embeddings.totalEmbeddings
+        });
+
         response.json({
             success: true,
             message: "PDF processed successfully",
+            docId: insertedDoc.docId,
             docName: request.file.originalname,
             filePath: request.file.path,
+            fileSize: request.file.size,
             embeddings: {
                 count: embeddings.totalEmbeddings,
                 pdfId: embeddings.pdfId,
@@ -143,6 +162,24 @@ router.get("/queries", async (request, response) => {
     } catch (error) {
         console.log("🚀 ~ Get queries error:", error);
         response.status(500).json({ success: false, error: "Failed to retrieve queries" });
+    }
+});
+
+/**
+ * Get all uploaded documents
+ */
+router.get("/documents", async (request, response) => {
+    try {
+        const documents = queryDB.getAllDocuments();
+        response.json({
+            success: true,
+            message: "Retrieved all uploaded documents",
+            count: documents.length,
+            documents: documents
+        });
+    } catch (error) {
+        console.log("🚀 ~ Get documents error:", error);
+        response.status(500).json({ success: false, error: "Failed to retrieve documents" });
     }
 });
 
