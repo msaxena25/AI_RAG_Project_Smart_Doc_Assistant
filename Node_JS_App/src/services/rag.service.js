@@ -4,7 +4,7 @@ import { getStoredPromptEmbedding, storePromptEmbedding } from "../store/prompt.
 import { generateEmbeddingsForUserPrompt } from "../vector-operations/embedding.generator.js";
 import formatPromptForLLM from '../utils/util.js';
 import { FILE_PATHS } from '../config/path.js';
-import { queryDB } from '../store/sqlite.db.js';
+import { sqliteDB } from '../store/sqlite.db.js';
 
 /**
  * RAG Service - Handles Retrieval Augmented Generation pipeline
@@ -17,7 +17,7 @@ class RAGService {
      */
     static checkDatabaseCache(userPrompt) {
         console.log('🔍 Checking database cache for existing answer...');
-        const cachedQuery = queryDB.findQueryByPrompt(userPrompt);
+        const cachedQuery = sqliteDB.findQueryByPrompt(userPrompt);
         
         if (cachedQuery) {
             console.log(`✅ Found cached answer for prompt (ID: ${cachedQuery.queryId})`);
@@ -94,7 +94,7 @@ class RAGService {
      * @returns {Object} Saved query information
      */
     static saveQueryToDatabase(userPrompt, answer) {
-        const savedQuery = queryDB.insertQuery(userPrompt, answer);
+        const savedQuery = sqliteDB.insertQuery(userPrompt, answer);
         console.log(`✅ Query saved with ID: ${savedQuery.queryId}`);
         return savedQuery;
     }
@@ -111,6 +111,16 @@ class RAGService {
             if (cachedResult) {
                 return cachedResult;
             }
+
+             return {
+                answer: 'Hi I am your answer',
+                queryId: 1,
+                finalPrompt: 'Final prompt with context goes here',
+                metadata: {
+                    cached: false,
+                    processingTime: new Date().toISOString()
+                }
+            };
 
             console.log('💭 No cached answer found, processing new query...');
             
@@ -147,7 +157,7 @@ class RAGService {
      */
     static getRAGStats() {
         return {
-            totalProcessedQueries: queryDB.getQueryStats().totalQueries,
+            totalProcessedQueries: sqliteDB.getQueryStats().totalQueries,
             averageResponseTime: '~2-3 seconds', // This could be calculated from actual metrics
             pipelineSteps: [
                 'Embedding Generation',

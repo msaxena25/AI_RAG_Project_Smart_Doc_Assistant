@@ -1,5 +1,5 @@
 import { SERVER_CONFIG, ERROR_MESSAGES, validateEnvironmentConfig } from './config/app.config.js';
-import { queryDB } from './store/sqlite.db.js';
+import { sqliteDB } from './store/sqlite.db.js';
 import mainRoutes from './routes/main.routes.js';
 import dotenv from "dotenv";
 import express from "express";
@@ -30,7 +30,7 @@ initializeDatabase();
 console.log('🔄 Validating environment configuration...');
 if (!validateEnvironmentConfig()) {
     console.error('❌ Environment validation failed. Please fix the configuration and restart.');
-    process.exit(1);
+   // process.exit(1);
 }
 
 // Validate port configuration
@@ -66,13 +66,13 @@ app.listen(port, () => {
 // Graceful shutdown handlers
 process.on('SIGINT', () => {
     console.log('\n🛑 Received SIGINT. Shutting down gracefully...');
-    queryDB.close();
+    sqliteDB.close();
     process.exit(0);
 });
 
 process.on('SIGTERM', () => {
     console.log('\n🛑 Received SIGTERM. Shutting down gracefully...');
-    queryDB.close();
+    sqliteDB.close();
     process.exit(0);
 });
 

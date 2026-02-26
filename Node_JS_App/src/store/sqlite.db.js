@@ -9,7 +9,7 @@ const DB_PATH = path.join(process.cwd(), 'storage', 'database', 'queries.db');
 /**
  * SQLite Database service for managing user queries
  */
-class QueryDatabase {
+class SQLLiteDB {
     constructor() {
         this.db = null;
         this.init();
@@ -521,6 +521,25 @@ class QueryDatabase {
     }
 
     /**
+     * Delete all documents from the table (hard delete)
+     * @returns {number} Number of deleted records
+     */
+    deleteAllDocuments() {
+        const deleteAllSQL = `DELETE FROM documents`;
+
+        try {
+            const stmt = this.db.prepare(deleteAllSQL);
+            const result = stmt.run();
+
+            console.log(`✅ All documents deleted. Removed ${result.changes} records`);
+            return result.changes;
+        } catch (error) {
+            console.error('❌ Failed to delete all documents:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Close database connection
      */
     close() {
@@ -532,7 +551,7 @@ class QueryDatabase {
 }
 
 // Export singleton instance
-export const queryDB = new QueryDatabase();
+export const sqliteDB = new SQLLiteDB();
 
 // Export class for testing
-export { QueryDatabase };
+export { SQLLiteDB };

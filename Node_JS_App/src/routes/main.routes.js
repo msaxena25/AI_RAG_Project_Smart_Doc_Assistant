@@ -2,7 +2,7 @@ import { processPdf } from "../document-processer.js";
 import RAGService from "../services/rag.service.js";
 import { API_MESSAGES, ERROR_MESSAGES } from '../config/app.config.js';
 import { FILE_PATHS } from '../config/path.js';
-import { queryDB } from '../store/sqlite.db.js';
+import { sqliteDB } from '../store/sqlite.db.js';
 import express from "express";
 import multer from 'multer';
 import path from 'path';
@@ -110,10 +110,10 @@ router.post("/process-pdf", upload.single('document'), async (request, response)
             mimeType: request.file.mimetype
         };
 
-        const insertedDoc = queryDB.insertDocument(docData);
+        const insertedDoc = sqliteDB.insertDocument(docData);
 
         // Update document with processing results
-        queryDB.updateDocumentAfterProcessing(insertedDoc.docId, {
+        sqliteDB.updateDocumentAfterProcessing(insertedDoc.docId, {
             pdfId: embeddings.pdfId,
             totalEmbeddings: embeddings.totalEmbeddings
         });
@@ -152,7 +152,7 @@ router.post("/process-pdf", upload.single('document'), async (request, response)
  */
 router.get("/queries", async (request, response) => {
     try {
-        const queries = queryDB.getAllQueries();
+        const queries = sqliteDB.getAllQueries();
         response.json({
             success: true,
             message: "Retrieved all queries",
@@ -170,7 +170,7 @@ router.get("/queries", async (request, response) => {
  */
 router.get("/documents", async (request, response) => {
     try {
-        const documents = queryDB.getAllDocuments();
+        const documents = sqliteDB.getAllDocuments();
         response.json({
             success: true,
             message: "Retrieved all uploaded documents",
@@ -188,7 +188,7 @@ router.get("/documents", async (request, response) => {
  */
 router.get("/stats", async (request, response) => {
     try {
-        const stats = queryDB.getQueryStats();
+        const stats = sqliteDB.getQueryStats();
         response.json({
             success: true,
             message: "Query statistics",
@@ -208,7 +208,7 @@ router.post("/queries/:queryId/feedback", express.json(), async (request, respon
         const { queryId } = request.params;
         const { liked, disliked } = request.body;
 
-        const success = queryDB.updateQueryFeedback(queryId, { liked, disliked });
+        const success = sqliteDB.updateQueryFeedback(queryId, { liked, disliked });
         
         if (success) {
             response.json({ success: true, message: "Feedback updated successfully" });
@@ -233,20 +233,20 @@ router.delete("/queries/clear", async (request, response) => {
 
         switch (type) {
             case 'soft':
-                deletedCount = queryDB.softDeleteAllQueries();
+                deletedCount = sqliteDB.softDeleteAllQueries();
                 message = `Soft deleted ${deletedCount} queries (recoverable)`;
                 break;
             case 'hard':
-                deletedCount = queryDB.deleteAllQueries();
+                deletedCount = sqliteDB.deleteAllQueries();
                 message = `Permanently deleted ${deletedCount} queries`;
                 break;
             case 'truncate':
-                queryDB.truncateTable();
+                sqliteDB.truncateTable();
                 message = "Table truncated and reset successfully";
                 break;
             default:
                 // Default to soft delete for safety
-                deletedCount = queryDB.softDeleteAllQueries();
+                deletedCount = sqliteDB.softDeleteAllQueries();
                 message = `Soft deleted ${deletedCount} queries (default: recoverable)`;
         }
 
@@ -262,6 +262,28 @@ router.delete("/queries/clear", async (request, response) => {
             success: false,
             error: "Failed to delete queries",
             details: error.message 
+        });
+    }
+});
+
+/**
+ * Delete all documents from database
+ * DELETE /documents/clear
+ */
+router.delete("/documents/clear", async (request, response) => {
+    try {
+        const deletedCount = sqliteDB.deleteAllDocuments();
+        response.json({
+            success: true,
+            message: `Deleted ${deletedCount} documents`,
+            deletedCount
+        });
+    } catch (error) {
+        console.log("🚀 ~ Delete all documents error:", error);
+        response.status(500).json({
+            success: false,
+            error: "Failed to delete documents",
+            details: error.message
         });
     }
 });
