@@ -27,7 +27,7 @@ const ChatInterface = ({ selectedQuery }) => {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  
+
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -52,7 +52,8 @@ const ChatInterface = ({ selectedQuery }) => {
           type: 'ai',
           content: selectedQuery.answer,
           timestamp: new Date(selectedQuery.createdAt || Date.now()),
-          queryId: selectedQuery.queryId
+          queryId: selectedQuery.queryId,
+          metadata: { cached: true }
         }
       ]);
       setInputValue('');
@@ -63,7 +64,7 @@ const ChatInterface = ({ selectedQuery }) => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!inputValue.trim() || isLoading) return;
 
     const userMessage = {
@@ -84,7 +85,7 @@ const ChatInterface = ({ selectedQuery }) => {
     try {
       // Call the query API
       const response = await queryDocument(userMessage.content);
-      
+
       // Add AI response
       const aiMessage = {
         id: Date.now() + 1,
@@ -98,7 +99,7 @@ const ChatInterface = ({ selectedQuery }) => {
       setMessages(prev => [...prev, aiMessage]);
     } catch (err) {
       console.error('Query error:', err);
-      
+
       // Add error message
       const errorMessage = {
         id: Date.now() + 1,
@@ -127,13 +128,22 @@ const ChatInterface = ({ selectedQuery }) => {
       handleSubmit(e);
     }
   };
-
   // Format timestamp
   const formatTimestamp = (timestamp) => {
-    return timestamp.toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
+    const now = new Date();
+    const isToday = timestamp.toDateString() === now.toDateString();
+
+    if (isToday) {
+      return timestamp.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } else {
+      return timestamp.toLocaleDateString('en-US', {
+        day: '2-digit',
+        month: 'short'
+      });
+    }
   };
 
   // Clear chat
@@ -165,8 +175,8 @@ const ChatInterface = ({ selectedQuery }) => {
             </p>
           </div>
         </div>
-        
-        <button 
+
+        <button
           onClick={clearChat}
           className="clear-chat-btn"
           disabled={isLoading}
@@ -192,29 +202,24 @@ const ChatInterface = ({ selectedQuery }) => {
                   <AlertCircle size={20} />
                 )}
               </div>
-              
+
               <div className="message-content">
                 <div className="message-bubble">
                   <p>{message.content}</p>
-                  
+
                   {/* Show metadata for AI responses */}
-                  {message.type === 'ai' && message.metadata && (
+                  {message.type === 'ai' && message.metadata?.cached && (
                     <div className="message-metadata">
                       <div className="metadata-item">
                         <FileText size={14} />
                         <span>
-                          {message.metadata.cached ? 'From cache' : 'New query'}
+                          {'From cache'}
                         </span>
                       </div>
-                      {message.queryId && (
-                        <div className="metadata-item">
-                          <span>ID: {message.queryId}</span>
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>
-                
+
                 <span className="message-timestamp">
                   {formatTimestamp(message.timestamp)}
                 </span>
@@ -267,7 +272,7 @@ const ChatInterface = ({ selectedQuery }) => {
               disabled={isLoading}
               maxLength={1000}
             />
-            
+
             <button
               type="submit"
               className="send-button"
@@ -280,7 +285,7 @@ const ChatInterface = ({ selectedQuery }) => {
               )}
             </button>
           </div>
-          
+
           <div className="input-footer">
             <span className="char-count">
               {inputValue.length}/1000 characters

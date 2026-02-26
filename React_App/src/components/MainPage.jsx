@@ -129,10 +129,6 @@ const MainPage = () => {
         setShowUploadForm(true);
     }
 
-    const showChatQueries = () => {
-        setShowUploadForm(false);
-    }
-
     return (
         <div className="main-page">
             {/* Content Area - Always Split Layout */}
@@ -141,7 +137,7 @@ const MainPage = () => {
                 <div className="upload-panel">
                     <div className="panel-header">
                         <FileText size={20} />
-                        <h3>Document Management</h3>
+                        <h3>{bottomTab === 'documents' ? 'Document Management' : 'Recent Queries'}</h3>
                     </div>
                     <div className="panel-content">
                         {bottomTab === 'documents' ? (

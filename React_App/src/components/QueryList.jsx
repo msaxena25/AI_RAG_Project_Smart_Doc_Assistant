@@ -29,7 +29,6 @@ const QueryList = ({ onSelectQuery, selectedQuery }) => {
 
     return (
         <div className="query-list-container">
-            <h3>Saved Queries</h3>
             {isLoading && <div className="loading">Loading...</div>}
             {error && <div className="error">{error}</div>}
             {!isLoading && !error && (
