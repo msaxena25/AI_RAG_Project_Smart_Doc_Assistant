@@ -38,6 +38,7 @@ npm run dev
 - **multer** - Middleware for handling file uploads
 - **node-localstorage** - Local storage implementation for caching
 - **pdf-parse** - Extract text content from PDF documents
+- **uuid** - Generate unique identifiers for database records
 
 ### Development Dependencies
 - **nodemon** - Auto-restart server during development
