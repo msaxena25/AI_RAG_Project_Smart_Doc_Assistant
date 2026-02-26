@@ -24,3 +24,20 @@ npm run dev
 ### Test Endpoint
 
 `http://localhost:4100/gemini?prompt=Hello`
+
+## Dependencies
+
+### Production Dependencies
+- **@google/genai** - Google Generative AI SDK for embeddings and LLM responses
+- **better-sqlite3** - Fast SQLite database for storing queries and embeddings
+- **compute-cosine-similarity** - Calculate similarity between document embeddings  
+- **cors** - Enable cross-origin requests from React frontend
+- **crypto** - Cryptographic utilities for generating unique IDs
+- **dotenv** - Load environment variables from .env file
+- **express** - Web framework for creating REST API server
+- **multer** - Middleware for handling file uploads
+- **node-localstorage** - Local storage implementation for caching
+- **pdf-parse** - Extract text content from PDF documents
+
+### Development Dependencies
+- **nodemon** - Auto-restart server during development

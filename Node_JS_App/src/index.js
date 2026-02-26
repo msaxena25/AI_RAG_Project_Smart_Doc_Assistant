@@ -3,6 +3,7 @@ import { queryDB } from './store/sqlite.db.js';
 import mainRoutes from './routes/main.routes.js';
 import dotenv from "dotenv";
 import express from "express";
+import cors from "cors";
 dotenv.config();
 
 const app = express();
@@ -39,6 +40,10 @@ if (!port) {
 }
 
 // Middleware
+app.use(cors({
+    origin: ['http://localhost:5173', 'http://localhost:3000'], // React dev server ports
+    credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

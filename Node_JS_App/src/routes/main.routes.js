@@ -4,8 +4,45 @@ import { API_MESSAGES, ERROR_MESSAGES } from '../config/app.config.js';
 import { FILE_PATHS } from '../config/path.js';
 import { queryDB } from '../store/sqlite.db.js';
 import express from "express";
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
 const router = express.Router();
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const uploadDir = './storage/documents';
+        // Ensure directory exists
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+        // Generate unique filename
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+// File filter for PDF files only
+const fileFilter = (req, file, cb) => {
+    if (file.mimetype === 'application/pdf') {
+        cb(null, true);
+    } else {
+        cb(new Error('Only PDF files are allowed'), false);
+    }
+};
+
+const upload = multer({ 
+    storage: storage,
+    fileFilter: fileFilter,
+    limits: {
+        fileSize: 10 * 1024 * 1024 // 10MB limit
+    }
+});
 
 /**
  * Health check endpoint
@@ -46,14 +83,29 @@ router.get("/query", async (request, response) => {
 
 /**
  * PDF processing endpoint - extracts text and generates embeddings
+ * Handles file upload via POST with multipart/form-data
  */
-router.get("/process-pdf", async (request, response) => {
+router.post("/process-pdf", upload.single('document'), async (request, response) => {
     try {
-        const embeddings = await processPdf(FILE_PATHS.TEST_PDF);
+        // Check if file was uploaded
+        if (!request.file) {
+            return response.status(400).json({ 
+                success: false, 
+                error: "No file uploaded. Please select a PDF file." 
+            });
+        }
+
+        console.log('📄 Processing uploaded file:', request.file.originalname);
+        console.log('📁 File path:', request.file.path);
+
+        // Process the uploaded PDF file
+        const embeddings = await processPdf(request.file.path);
+        
         response.json({
             success: true,
             message: "PDF processed successfully",
-            docName: FILE_PATHS.TEST_PDF,
+            docName: request.file.originalname,
+            filePath: request.file.path,
             embeddings: {
                 count: embeddings.totalEmbeddings,
                 pdfId: embeddings.pdfId,
@@ -62,7 +114,17 @@ router.get("/process-pdf", async (request, response) => {
         });
     } catch (error) {
         console.log("🚀 ~ PDF processing error:", error);
-        response.status(500).json({ success: false, error: "Failed to extract PDF chunks" });
+        
+        // Clean up uploaded file on error
+        if (request.file && fs.existsSync(request.file.path)) {
+            fs.unlinkSync(request.file.path);
+        }
+        
+        response.status(500).json({ 
+            success: false, 
+            error: "Failed to process PDF file",
+            details: error.message 
+        });
     }
 });
 
