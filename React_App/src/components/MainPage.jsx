@@ -13,6 +13,7 @@ import { formatFileSize } from '../utils/fileUtils';
 import './MainPage.css';
 import { API_ENDPOINTS } from '../config/api';
 import { documentAPI } from '../services/api';
+import QueryList from './QueryList';
 
 const MainPage = () => {
     const [activeTab, setActiveTab] = useState('upload');
@@ -25,6 +26,8 @@ const MainPage = () => {
     const [currentQuery, setCurrentQuery] = useState('');
     const [error, setError] = useState('');
     const [documentList, setDocumentList] = useState([]); // State to hold list of all documents
+    const [bottomTab, setBottomTab] = useState('documents');
+    const [selectedQuery, setSelectedQuery] = useState(null);
 
     // Check if document has been processed on component mount
     useEffect(() => {
@@ -126,6 +129,10 @@ const MainPage = () => {
         setShowUploadForm(true);
     }
 
+    const showChatQueries = () => {
+        setShowUploadForm(false);
+    }
+
     return (
         <div className="main-page">
             {/* Content Area - Always Split Layout */}
@@ -137,58 +144,64 @@ const MainPage = () => {
                         <h3>Document Management</h3>
                     </div>
                     <div className="panel-content">
-                        {showUploadForm ? (
-                            <DocumentUpload
-                                compact={true}
-                                onDocumentUploaded={onDocumentUploaded}
-                                onClose={handleCloseDocumentUploadSection}
-                            />
-                        ) : (
-                            <div className="uploaded-document-view">
-                                {/* Uploaded Document Info */}
-                                <div className="uploaded-doc-info">
-                                    <div className="doc-status">
-
-                                        <div className="doc-details">
-                                            {documentList.length > 0 ? (
-                                                <div className="document-list">
-                                                    {documentList.map((doc, index) => (
-                                                        <div key={index}>
-
-                                                            <CheckCircle size={10} />
-                                                            {doc.originalName}</div>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <p>No documents uploaded yet.</p>
-                                            )}
+                        {bottomTab === 'documents' ? (
+                            showUploadForm ? (
+                                <DocumentUpload
+                                    compact={true}
+                                    onDocumentUploaded={onDocumentUploaded}
+                                    onClose={handleCloseDocumentUploadSection}
+                                />
+                            ) : (
+                                <div className="uploaded-document-view">
+                                    {/* Uploaded Document Info */}
+                                    <div className="uploaded-doc-info">
+                                        <div className="doc-status">
+                                            <div className="doc-details">
+                                                {documentList.length > 0 ? (
+                                                    <div className="document-list">
+                                                        {documentList.map((doc, index) => (
+                                                            <div key={index}>
+                                                                <CheckCircle size={10} />
+                                                                {doc.originalName}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <p>No documents uploaded yet.</p>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
-
-                                    <div className="doc-checkbox">
-                                        <input
-                                            type="checkbox"
-                                            id="doc-selected"
-                                            checked={true}
-                                            readOnly
-                                        />
-                                        <label htmlFor="doc-selected">Selected for chat</label>
+                                    {/* Upload New Document Button */}
+                                    <div className="upload-new-section">
+                                        <button
+                                            type="button"
+                                            onClick={handleUploadNew}
+                                            className="upload-new-btn"
+                                        >
+                                            <Upload size={16} />
+                                            Upload New Document
+                                        </button>
                                     </div>
                                 </div>
-
-                                {/* Upload New Document Button */}
-                                <div className="upload-new-section">
-                                    <button
-                                        type="button"
-                                        onClick={handleUploadNew}
-                                        className="upload-new-btn"
-                                    >
-                                        <Upload size={16} />
-                                        Upload New Document
-                                    </button>
-                                </div>
-                            </div>
+                            )
+                        ) : (
+                            <QueryList onSelectQuery={setSelectedQuery} selectedQuery={selectedQuery} />
                         )}
+                    </div>
+                    <div className="tab-navigation">
+                        <button
+                            className={`tab-button${bottomTab === 'documents' ? ' active' : ''}`}
+                            onClick={() => setBottomTab('documents')}
+                        >
+                            <span className="tab-label">Documents</span>
+                        </button>
+                        <button
+                            className={`tab-button${bottomTab === 'queries' ? ' active' : ''}`}
+                            onClick={() => setBottomTab('queries')}
+                        >
+                            <span className="tab-label">Query List</span>
+                        </button>
                     </div>
                 </div>
 
@@ -199,13 +212,13 @@ const MainPage = () => {
                         <h3>Chat with AI</h3>
                     </div>
                     <div className="panel-content">
-                        <ChatInterface />
+                        <ChatInterface selectedQuery={selectedQuery} />
                     </div>
                 </div>
             </div>
-
-            {/* Status Footer */}
+            {/* Bottom Tabs */}
             <div className="main-footer">
+
                 <div className="footer-info">
                     <p>Powered by Gemini AI & RAG Technology</p>
                 </div>

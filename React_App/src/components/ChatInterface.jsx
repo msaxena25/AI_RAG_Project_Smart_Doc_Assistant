@@ -14,7 +14,7 @@ import { Send, Bot, User, Loader2, AlertCircle, FileText } from 'lucide-react';
 import { queryDocument } from '../services/api';
 import './ChatInterface.css';
 
-const ChatInterface = () => {
+const ChatInterface = ({ selectedQuery }) => {
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -38,7 +38,27 @@ const ChatInterface = () => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+    if (selectedQuery) {
+      setMessages([
+        {
+          id: selectedQuery.queryId,
+          type: 'user',
+          content: selectedQuery.prompt,
+          timestamp: new Date(selectedQuery.createdAt || Date.now()),
+          queryId: selectedQuery.queryId
+        },
+        {
+          id: selectedQuery.queryId + '-ai',
+          type: 'ai',
+          content: selectedQuery.answer,
+          timestamp: new Date(selectedQuery.createdAt || Date.now()),
+          queryId: selectedQuery.queryId
+        }
+      ]);
+      setInputValue('');
+      setError(null);
+    }
+  }, [selectedQuery]);
 
   // Handle form submission
   const handleSubmit = async (e) => {
