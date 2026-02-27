@@ -216,7 +216,7 @@ const MainPage = () => {
                         <h3>Chat with AI</h3>
                     </div>
                     <div className="panel-content">
-                        <ChatInterface selectedQuery={selectedQuery} />
+                        <ChatInterface selectedQuery={selectedQuery} selectedDocument={selectedDocument} />
                     </div>
                 </div>
             </div>

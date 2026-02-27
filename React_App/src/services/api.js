@@ -38,11 +38,11 @@ apiClient.interceptors.response.use(
   },
   (error) => {
     console.error('❌ API Response Error:', error.response?.data || error.message);
-    
+
     // Handle common error scenarios
     if (error.response) {
       const { status, data } = error.response;
-      
+
       switch (status) {
         case 401:
           throw new Error('Authentication failed. Please check your API key.');
@@ -79,17 +79,17 @@ export const documentAPI = {
   async processPDF(file) {
     try {
       console.log('📄 Processing document:', file.name);
-      
+
       // Create FormData for file upload
       const formData = new FormData();
       formData.append('document', file);
-      
+
       const response = await apiClient.post('/documents/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-      
+
       return {
         success: true,
         data: {
@@ -112,12 +112,11 @@ export const documentAPI = {
    * @param {string} prompt - User's question
    * @returns {Promise<Object>} Query result
    */
-  async queryDocument(prompt) {
+  async queryDocument(prompt, docId) {
     try {
       const response = await apiClient.get('/query', {
-        params: { prompt, docId: 'latest' } // Assuming we want to query the latest processed document,
+        params: { prompt, docId: docId }
       });
-      
       return {
         success: true,
         data: response.data,
@@ -137,7 +136,7 @@ export const documentAPI = {
   async getAllQueries() {
     try {
       const response = await apiClient.get('/queries');
-      
+
       return {
         success: true,
         data: response.data,
@@ -172,7 +171,7 @@ export const documentAPI = {
   async getStats() {
     try {
       const response = await apiClient.get('/stats');
-      
+
       return {
         success: true,
         data: response.data,
@@ -192,7 +191,7 @@ export const documentAPI = {
   async healthCheck() {
     try {
       const response = await apiClient.get('/health');
-      
+
       return {
         success: true,
         data: response.data,
@@ -210,8 +209,8 @@ export const documentAPI = {
  * Simplified API functions for easy import
  */
 export const processDocument = documentAPI.processPDF;
-export const queryDocument = async (prompt) => {
-  const result = await documentAPI.queryDocument(prompt);
+export const queryDocument = async (prompt, docId) => {
+  const result = await documentAPI.queryDocument(prompt, docId);
   if (result.success) {
     return result.data;
   } else {

@@ -14,7 +14,7 @@ import { Send, Bot, User, Loader2, AlertCircle, FileText } from 'lucide-react';
 import { queryDocument } from '../services/api';
 import './ChatInterface.css';
 
-const ChatInterface = ({ selectedQuery }) => {
+const ChatInterface = ({ selectedQuery, selectedDocument }) => {
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -83,8 +83,9 @@ const ChatInterface = ({ selectedQuery }) => {
 
 
     try {
-      // Call the query API
-      const response = await queryDocument(userMessage.content);
+      // Call the query API, passing docId if available
+      const docId = selectedDocument && selectedDocument.docId ? selectedDocument.docId : undefined;
+      const response = await queryDocument(userMessage.content, docId);
 
       // Add AI response
       const aiMessage = {
