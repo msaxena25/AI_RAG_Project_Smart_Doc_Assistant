@@ -15,10 +15,10 @@ class RAGService {
      * @param {string} userPrompt - User's question
      * @returns {Object|null} Cached query result or null
      */
-    static checkDatabaseCache(userPrompt) {
+    static findInSqlLiteDatabase(userPrompt) {
         console.log('🔍 Checking database cache for existing answer...');
         const cachedQuery = sqliteDB.findQueryByPrompt(userPrompt);
-        
+
         if (cachedQuery) {
             console.log(`✅ Found cached answer for prompt (ID: ${cachedQuery.queryId})`);
             return {
@@ -32,7 +32,7 @@ class RAGService {
                 }
             };
         }
-        
+
         return null;
     }
 
@@ -44,16 +44,17 @@ class RAGService {
     static async getPromptEmbedding(userPrompt) {
         console.log('🔄 Getting prompt embedding...');
         let promptEmbedding = getStoredPromptEmbedding(userPrompt);
-        
+
         if (!promptEmbedding) {
             console.log('📝 Generating new embedding for prompt...');
-            promptEmbedding = await generateEmbeddingsForUserPrompt(userPrompt);
+            //promptEmbedding = await generateEmbeddingsForUserPrompt(userPrompt);
+            promptEmbedding = [[{ "values": [0.1, 0.2, 0.3] }]]; // Placeholder embedding for testing
             // Cache the new embedding for future use
             storePromptEmbedding(userPrompt, promptEmbedding);
         } else {
             console.log('✅ Using cached embedding for prompt');
         }
-        
+
         return promptEmbedding;
     }
 
@@ -62,9 +63,9 @@ class RAGService {
      * @param {Array} promptEmbedding - Embedding vector for the prompt
      * @returns {Object} Similarity search results
      */
-    static findRelevantChunks(promptEmbedding) {
+    static findRelevantChunks(promptEmbedding, embeddingDocId) {
         console.log('🔍 Finding relevant document chunks...');
-        return findTopSimilarChunks(promptEmbedding, null, FILE_PATHS.TEST_PDF);
+        return findTopSimilarChunks(promptEmbedding, embeddingDocId);
     }
 
     /**
@@ -76,11 +77,12 @@ class RAGService {
     static async generateContextualAnswer(userPrompt, similarityResult) {
         // Format prompt for LLM with context
         const finalPrompt = formatPromptForLLM(userPrompt, similarityResult);
-        
+
         // Get final answer from LLM
-        const llmAnswer = await generateAnswerFromLLM(finalPrompt);
+        //  const llmAnswer = await generateAnswerFromLLM(finalPrompt);
+        const llmAnswer = "This is a mock LLM response for testing purposes.";
         console.log('✅ LLM Response received', llmAnswer);
-        
+
         return {
             answer: llmAnswer,
             finalPrompt: finalPrompt
@@ -102,33 +104,32 @@ class RAGService {
     /**
      * Process user prompt through complete RAG pipeline
      * @param {string} userPrompt - User's question
+     * @param {string} docId - Document ID to process
      * @returns {Promise<Object>} Complete RAG response with answer, chunks, etc.
      */
-    static async processPrompt(userPrompt) {
+    static async processPrompt(userPrompt, docId) {
         try {
             // Step 1: Check database cache first
-            const cachedResult = this.checkDatabaseCache(userPrompt);
+            const cachedResult = this.findInSqlLiteDatabase(userPrompt);
             if (cachedResult) {
                 return cachedResult;
             }
 
-             return {
-                answer: 'Hi I am your answer',
-                queryId: 1,
-                finalPrompt: 'Final prompt with context goes here',
-                metadata: {
-                    cached: false,
-                    processingTime: new Date().toISOString()
-                }
-            };
-
             console.log('💭 No cached answer found, processing new query...');
-            
+
             // Step 2: Get embedding for user prompt
             const promptEmbedding = await this.getPromptEmbedding(userPrompt);
 
+            // Step 2.5: Fetch embeddingDocId from DB
+            const docRecord = sqliteDB.getDocumentById(docId);
+            const embeddingDocId = docRecord ? docRecord.embeddingDocId : null;
+
+            if (!embeddingDocId) {
+                throw new Error(`No document found for this query. Please select a valid document to query against.`);
+            }
+
             // Step 3: Find relevant document chunks
-            const similarityResult = this.findRelevantChunks(promptEmbedding);
+            const similarityResult = this.findRelevantChunks(promptEmbedding, embeddingDocId);
 
             // Step 4: Generate answer using LLM with context
             const { answer, finalPrompt } = await this.generateContextualAnswer(userPrompt, similarityResult);
@@ -147,7 +148,7 @@ class RAGService {
             };
         } catch (error) {
             console.error('❌ RAG Pipeline Error:', error);
-            throw new Error(`RAG processing failed: ${error.message}`);
+            throw new Error(error.message);
         }
     }
 

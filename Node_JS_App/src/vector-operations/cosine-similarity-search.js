@@ -85,17 +85,12 @@ function logSimilarityResults(topChunks) {
  * @param {Array} chunkEmbeddings - Array of chunk embeddings to compare against
  * @returns {Array} Top 3 most similar chunks sorted by similarity score
  */
-export function findTopSimilarChunks(promptEmbedding, chunkEmbeddings = null, filePath) {
+export function findTopSimilarChunks(promptEmbedding, embeddingDocId) {
     try {
-        // Use provided embeddings, or load from file, or fallback to global variable
-        let embeddings = chunkEmbeddings;
+        let embeddings = null;
 
         if (!embeddings || embeddings.length === 0) {
-            embeddings = loadChunkEmbeddingsFromFile(filePath);
-        }
-
-        if (!embeddings || embeddings.length === 0) {
-            embeddings = getChunkEmbeddings();
+            embeddings = loadChunkEmbeddingsFromFile(embeddingDocId);
         }
 
         // Validate inputs

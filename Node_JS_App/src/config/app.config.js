@@ -55,7 +55,8 @@ export const API_MESSAGES = {
     EMBEDDING_ERROR: 'Failed to generate embeddings',
     PROMPT_CACHE_CLEARED: 'Prompt cache cleared successfully',
     DOCUMENT_NOT_FOUND: 'Answer not found in document.',
-    INVALID_PROMPT: 'Please provide a prompt parameter'
+    INVALID_PROMPT: 'Please provide a prompt parameter',
+    DOCUMENT_ID_REQUIRED: 'Please provide a docId parameter'
 };
 
 // LLM Configuration

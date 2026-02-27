@@ -19,12 +19,17 @@ router.get("/", (request, response) => {
 router.get("/query", async (request, response) => {
     try {
         const userPrompt = request.query.prompt || request.query.q;
+        const docId = request.query.docId;
         if (!userPrompt) {
             response.status(400).json({ error: API_MESSAGES.INVALID_PROMPT });
             return;
         }
+        if (!docId) {
+            response.status(400).json({ error: API_MESSAGES.DOCUMENT_ID_REQUIRED });
+            return;
+        }
 
-        const result = await RAGService.processPrompt(userPrompt);
+        const result = await RAGService.processPrompt(userPrompt, docId);
 
         response.json({
             success: true,

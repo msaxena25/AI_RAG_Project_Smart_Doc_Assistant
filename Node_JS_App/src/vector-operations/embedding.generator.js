@@ -28,11 +28,11 @@ export async function generateChunkEmbeddings(chunks, filePath, embeddingDocId) 
         // Generate embeddings for each chunk
         for (let i = 0; i < chunks.length; i++) {
             console.log(`Generating embedding for chunk ${i + 1}/${chunks.length}`);
-            const embeddingValues = await generateEmbeddingFromGenAI(chunks[i]);
+            // const embeddingValues = await generateEmbeddingFromGenAI(chunks[i]);
             chunkEmbeddings.push({
                 chunkIndex: i,
                 text: chunks[i],
-                embedding: embeddingValues
+                embedding: [{ embedding: [0.1, 0.2, 0.3] }] // Placeholder embedding values for testing
             });
         }
 
@@ -96,29 +96,15 @@ export async function generateEmbeddingsForUserPrompt(prompt) {
  * Load chunk embeddings from saved PDF JSON file
  * @returns {Array} Array of chunk embeddings from the most recent PDF
  */
-export function loadChunkEmbeddingsFromFile(filePath) {
+export function loadChunkEmbeddingsFromFile(embeddingDocId) {
     try {
-        // Get list of stored embeddings
-        const storedEmbeddings = listStoredEmbeddings();
-
-        if (storedEmbeddings.length === 0) {
-            console.log("No stored embeddings found");
-            return [];
-        }
-
-        // Get the most recent PDF embeddings (first in the list)
-        const latestembeddingDocId = storedEmbeddings[0];
-
-
-        const loadedEmbeddings = loadExistingEmbeddings(filePath, latestembeddingDocId);
-
+        // Load embeddings using embeddingDocId
+        const loadedEmbeddings = loadExistingEmbeddings(embeddingDocId);
         if (loadedEmbeddings && loadedEmbeddings.length > 0) {
             return loadedEmbeddings;
         }
-
-        console.log("No chunk data found in stored embeddings");
+        console.log("No chunk data found for embeddingDocId:", embeddingDocId);
         return [];
-
     } catch (error) {
         console.error("Error loading chunk embeddings from file:", error);
         return [];
