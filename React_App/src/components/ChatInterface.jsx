@@ -249,13 +249,13 @@ const ChatInterface = ({ selectedQuery }) => {
       </div>
 
       {/* Error Display */}
-      {error && (
+      {/* {error && (
         <div className="error-banner">
           <AlertCircle size={16} />
           <span>{error}</span>
           <button onClick={() => setError(null)}>×</button>
         </div>
-      )}
+      )} */}
 
       {/* Input Form */}
       <div className="chat-input-container">

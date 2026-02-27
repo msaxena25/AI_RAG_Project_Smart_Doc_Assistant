@@ -55,7 +55,7 @@ apiClient.interceptors.response.use(
         case 429:
           throw new Error('Too many requests. Please try again later.');
         case 500:
-          throw new Error('Server error. Please try again later.');
+          throw new Error('Server error. Please try again later.' + (data.details ? ` Details: ${data.details}` : ''));
         default:
           throw new Error(data?.message || `API Error: ${status}`);
       }
@@ -84,7 +84,7 @@ export const documentAPI = {
       const formData = new FormData();
       formData.append('document', file);
       
-      const response = await apiClient.post('/process-pdf', formData, {
+      const response = await apiClient.post('/documents/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -115,7 +115,7 @@ export const documentAPI = {
   async queryDocument(prompt) {
     try {
       const response = await apiClient.get('/query', {
-        params: { prompt },
+        params: { prompt, docId: 'latest' } // Assuming we want to query the latest processed document,
       });
       
       return {
@@ -152,7 +152,7 @@ export const documentAPI = {
 
   async getAllDocuments() {
     try {
-      const response = await apiClient.get('/documents');
+      const response = await apiClient.get('/documents/fetch');
       return {
         success: true,
         data: response.data,
