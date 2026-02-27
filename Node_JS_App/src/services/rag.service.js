@@ -1,4 +1,5 @@
 import { generateAnswerFromLLM } from "./genai.service.js";
+import { USE_LLM_MODEL } from '../config/app.config.js';
 import { findTopSimilarChunks } from "../vector-operations/cosine-similarity-search.js";
 import { getStoredPromptEmbedding, storePromptEmbedding } from "../store/prompt.cache.js";
 import { generateEmbeddingsForUserPrompt } from "../vector-operations/embedding.generator.js";
@@ -78,11 +79,14 @@ class RAGService {
         // Format prompt for LLM with context
         const finalPrompt = formatPromptForLLM(userPrompt, similarityResult);
 
-        // Get final answer from LLM
-        //  const llmAnswer = await generateAnswerFromLLM(finalPrompt);
-        const llmAnswer = "This is a mock LLM response for testing purposes.";
+        // Get final answer from LLM or use static
+        let llmAnswer;
+        if (USE_LLM_MODEL) {
+            llmAnswer = await generateAnswerFromLLM(finalPrompt);
+        } else {
+            llmAnswer = "This is a mock LLM response for testing purposes.";
+        }
         console.log('✅ LLM Response received', llmAnswer);
-
         return {
             answer: llmAnswer,
             finalPrompt: finalPrompt

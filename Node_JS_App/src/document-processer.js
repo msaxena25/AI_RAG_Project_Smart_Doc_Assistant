@@ -13,7 +13,6 @@ import path from "path";
  * @returns {Promise<Object>} A promise that resolves to the parsed embeddings of the PDF.
  */
 export async function processPdf(filePath) {
-    console.log("🚀 ~ filePath:", filePath)
     const embeddingDocId = generateEmbeddingDocId(filePath);
     const texts = await pdfToText(filePath);
     const chunks = createTextChunks(texts);
@@ -46,7 +45,6 @@ function generateEmbeddingDocId(filePath) {
             .update(`${fileName}-${fileSize}`)
             .digest('hex')
             .substring(0, 8);
-
         return `${path.parse(fileName).name}_${hash}`;
     } catch (error) {
         console.error("Error generating PDF ID:", error);

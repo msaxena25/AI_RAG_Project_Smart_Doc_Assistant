@@ -1,7 +1,11 @@
+
 import dotenv from "dotenv";
 
 // Load environment variables from .env file
 dotenv.config();
+
+// Toggle for LLM model usage (true = call models, false = use static data)
+export const USE_LLM_MODEL = false;
 
 // Environment Configuration (loaded from .env)
 export const ENV_CONFIG = {
@@ -62,7 +66,7 @@ export const API_MESSAGES = {
 // LLM Configuration
 export const LLM_CONFIG = {
     SYSTEM_PROMPT: `You are an assistant that answers ONLY from the provided document context.
-    If the answer is not present, say: "Answer not found in document."`,
+    If the answer is not present, say: "Answer not found in document. Please try with a different query."`,
     CONTEXT_START_MARKER: '--- DOCUMENT CONTEXT ---:',
     CONTEXT_END_MARKER: '--- END DOCUMENT CONTEXT ---',
     QUESTION_LABEL: 'Question:'
@@ -91,13 +95,13 @@ export const LOGGING_CONFIG = {
 export function validateEnvironmentConfig() {
     const requiredVars = ['GEMINI_API_KEY'];
     const missing = requiredVars.filter(varName => !ENV_CONFIG[varName]);
-    
+
     if (missing.length > 0) {
         console.error(`❌ Missing required environment variables: ${missing.join(', ')}`);
         console.error('Please set these in your .env file or environment variables.');
         return false;
     }
-    
+
     // Check if API key is still the placeholder value
     if (ENV_CONFIG.GEMINI_API_KEY === 'YOUR_NEW_API_KEY_HERE') {
         console.error('❌ GEMINI_API_KEY is still set to placeholder value');
@@ -105,7 +109,7 @@ export function validateEnvironmentConfig() {
         console.error('GEMINI_API_KEY=your_actual_api_key_here');
         return false;
     }
-    
+
     console.log('✅ Environment configuration validated successfully');
     return true;
 }

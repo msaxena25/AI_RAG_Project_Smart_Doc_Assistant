@@ -45,13 +45,13 @@ export function getStoredPromptEmbedding(prompt) {
     try {
         const key = generatePromptKey(prompt);
         const stored = localStorage.getItem(`${CACHE_CONFIG.PROMPT_KEY_PREFIX}${key}`);
-        
+
         if (stored) {
             const data = JSON.parse(stored);
             console.log(`Retrieved cached embedding for prompt: "${prompt.substring(0, LOGGING_CONFIG.MAX_PROMPT_DISPLAY_LENGTH)}..."`);
             return data.embedding;
         }
-        
+
         return null;
     } catch (error) {
         console.error("Error retrieving prompt embedding:", error);
@@ -67,7 +67,7 @@ export function listCachedPrompts() {
     try {
         const cachedPrompts = [];
         const length = localStorage.length;
-        
+
         for (let i = 0; i < length; i++) {
             const key = localStorage.key(i);
             if (key && key.startsWith('prompt_')) {
@@ -80,7 +80,7 @@ export function listCachedPrompts() {
                 });
             }
         }
-        
+
         return cachedPrompts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     } catch (error) {
         console.error("Error listing cached prompts:", error);
@@ -95,17 +95,17 @@ export function clearPromptCache() {
     try {
         const keys = [];
         const length = localStorage.length;
-        
+
         for (let i = 0; i < length; i++) {
             const key = localStorage.key(i);
             if (key && key.startsWith('prompt_')) {
                 keys.push(key);
             }
         }
-        
+
         keys.forEach(key => localStorage.removeItem(key));
         console.log(`Cleared ${keys.length} cached prompt embeddings`);
-        
+
     } catch (error) {
         console.error("Error clearing prompt cache:", error);
     }

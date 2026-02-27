@@ -1,6 +1,6 @@
 import { generateEmbeddingFromGenAI } from "./../services/genai.service.js";
 import { saveEmbeddingsToFile, listStoredEmbeddings, loadExistingEmbeddings } from "./../store/embedding.store.js";
-import { EMBEDDING_CONFIG } from '../config/app.config.js';
+import { EMBEDDING_CONFIG, USE_LLM_MODEL } from '../config/app.config.js';
 
 // Global variable to store embeddings
 let chunkEmbeddings = [];
@@ -28,11 +28,16 @@ export async function generateChunkEmbeddings(chunks, filePath, embeddingDocId) 
         // Generate embeddings for each chunk
         for (let i = 0; i < chunks.length; i++) {
             console.log(`Generating embedding for chunk ${i + 1}/${chunks.length}`);
-            // const embeddingValues = await generateEmbeddingFromGenAI(chunks[i]);
+            let embeddingValues;
+            if (USE_LLM_MODEL) {
+                embeddingValues = await generateEmbeddingFromGenAI(chunks[i]);
+            } else {
+                embeddingValues = [{ embedding: [0.1, 0.2, 0.3] }]; // Static test data
+            }
             chunkEmbeddings.push({
                 chunkIndex: i,
                 text: chunks[i],
-                embedding: [{ embedding: [0.1, 0.2, 0.3] }] // Placeholder embedding values for testing
+                embedding: embeddingValues
             });
         }
 
@@ -88,8 +93,12 @@ export function parseEmbeddings(embeddingsArray, embeddingDocId) {
 
 
 export async function generateEmbeddingsForUserPrompt(prompt) {
-    const embeddedVectors = await generateEmbeddingFromGenAI(prompt);
-    return embeddedVectors;
+    if (USE_LLM_MODEL) {
+        return await generateEmbeddingFromGenAI(prompt);
+    } else {
+        return [[{ values: [0.1, 0.2, 0.3] }]]; // Static test embedding
+    }
+
 }
 
 /**
