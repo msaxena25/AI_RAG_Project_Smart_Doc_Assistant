@@ -14,7 +14,7 @@ import { Send, Bot, User, Loader2, AlertCircle, FileText } from 'lucide-react';
 import { queryDocument } from '../services/api';
 import './ChatInterface.css';
 
-const ChatInterface = ({ selectedQuery, selectedDocument }) => {
+const ChatInterface = ({ selectedQuery, selectedDocument, systemMessage, onSystemMessageShown }) => {
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -39,7 +39,8 @@ const ChatInterface = ({ selectedQuery, selectedDocument }) => {
   useEffect(() => {
     scrollToBottom();
     if (selectedQuery) {
-      setMessages([
+      setMessages(prev => [
+        ...prev,
         {
           id: selectedQuery.queryId,
           type: 'user',
@@ -59,7 +60,23 @@ const ChatInterface = ({ selectedQuery, selectedDocument }) => {
       setInputValue('');
       setError(null);
     }
-  }, [selectedQuery]);
+    // Show system message after document upload
+    if (systemMessage) {
+      setMessages(prev => [
+        ...prev,
+        {
+          id: Date.now(),
+          type: 'ai',
+          content: systemMessage,
+          timestamp: new Date(),
+          queryId: null
+        }
+      ]);
+      if (typeof onSystemMessageShown === 'function') {
+        onSystemMessageShown();
+      }
+    }
+  }, [selectedQuery, systemMessage]);
 
   // Handle form submission
   const handleSubmit = async (e) => {

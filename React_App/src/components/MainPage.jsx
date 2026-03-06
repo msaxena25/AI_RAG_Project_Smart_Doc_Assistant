@@ -25,6 +25,9 @@ const MainPage = () => {
     const [bottomTab, setBottomTab] = useState('documents');
     const [selectedQuery, setSelectedQuery] = useState(null);
     const [selectedDocument, setSelectedDocument] = useState(null);
+    const [chatSystemMessage, setChatSystemMessage] = useState('');
+    // Track if system message has been shown
+    const [systemMessageShown, setSystemMessageShown] = useState(false);
 
     // Check if document has been processed on component mount
     useEffect(() => {
@@ -38,6 +41,12 @@ const MainPage = () => {
                 const data = response.data.documents || [];
                 setShowUploadForm(data.length === 0); // Hide upload form if documents exist
                 setDocumentList(data);
+                // Select the last added document by default
+                if (data.length > 0) {
+                    setSelectedDocument(data[0]);
+                } else {
+                    setSelectedDocument(null);
+                }
             } else {
                 console.error('Failed to fetch documents:', response.error);
                 return [];
@@ -114,6 +123,16 @@ const MainPage = () => {
     const onDocumentUploaded = (data) => {
         getAllDocuments(); // Refresh document list after upload
         setShowUploadForm(false);
+        if (data && data.name) {
+            setChatSystemMessage(
+                <>
+                    The document <span style={{ color: 'rgb(84, 0, 169)' }}>'{data.name}'</span> has been successfully uploaded. You may now proceed with your queries.
+                </>
+            );
+        } else {
+            setChatSystemMessage('The document has been successfully uploaded. You may now proceed with your queries.');
+        }
+        setSystemMessageShown(false);
     }
 
     const handleCloseDocumentUploadSection = () => {
@@ -196,7 +215,10 @@ const MainPage = () => {
                     <div className="tab-navigation">
                         <button
                             className={`tab-button${bottomTab === 'documents' ? ' active' : ''}`}
-                            onClick={() => setBottomTab('documents')}
+                            onClick={() => {
+                                setBottomTab('documents');
+                                setSelectedQuery(null);
+                            }}
                         >
                             <span className="tab-label">Documents</span>
                         </button>
@@ -216,7 +238,12 @@ const MainPage = () => {
                         <h3>Chat with AI</h3>
                     </div>
                     <div className="panel-content">
-                        <ChatInterface selectedQuery={selectedQuery} selectedDocument={selectedDocument} />
+                        <ChatInterface
+                            selectedQuery={selectedQuery}
+                            selectedDocument={selectedDocument}
+                            systemMessage={!systemMessageShown ? chatSystemMessage : ''}
+                            onSystemMessageShown={() => setSystemMessageShown(true)}
+                        />
                     </div>
                 </div>
             </div>
