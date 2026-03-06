@@ -165,6 +165,26 @@ export const documentAPI = {
   },
 
   /**
+   * Delete document by ID
+   * @param {string} docId - Document ID to delete
+   * @returns {Promise<Object>} Delete result
+   */
+  async deleteDocument(docId) {
+    try {
+      const response = await apiClient.delete(`/documents/${docId}`);
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  },
+
+  /**
    * Get query statistics
    * @returns {Promise<Object>} Statistics
    */

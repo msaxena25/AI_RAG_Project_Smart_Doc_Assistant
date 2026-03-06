@@ -8,7 +8,7 @@
 import React, { useState, useEffect } from 'react';
 import DocumentUpload from './DocumentUpload';
 import ChatInterface from './ChatInterface';
-import { FileText, MessageCircle, Upload, CheckCircle } from 'lucide-react';
+import { FileText, MessageCircle, Upload, CheckCircle, Trash2 } from 'lucide-react';
 import { formatFileSize } from '../utils/fileUtils';
 import './MainPage.css';
 import { API_ENDPOINTS } from '../config/api';
@@ -28,6 +28,7 @@ const MainPage = () => {
     const [chatSystemMessage, setChatSystemMessage] = useState('');
     // Track if system message has been shown
     const [systemMessageShown, setSystemMessageShown] = useState(false);
+    const [deleteToConfirm, setDeleteToConfirm] = useState(null);
 
     // Check if document has been processed on component mount
     useEffect(() => {
@@ -151,6 +152,26 @@ const MainPage = () => {
         // Example: console.log('Selected document:', doc.originalName, doc.docId);
     };
 
+    // Handle delete document
+    const handleDeleteDocument = async (docId) => {
+        try {
+            const response = await documentAPI.deleteDocument(docId);
+            if (response.success) {
+                // Remove from list
+                setDocumentList(prev => prev.filter(doc => doc.docId !== docId));
+                // Clear selection if deleted document was selected
+                if (selectedDocument && selectedDocument.docId === docId) {
+                    setSelectedDocument(null);
+                }
+                setDeleteToConfirm(null);
+            } else {
+                alert(`Error: ${response.error}`);
+            }
+        } catch (error) {
+            alert(`Error deleting document: ${error.message}`);
+        }
+    };
+
     return (
         <div className="main-page">
             {/* Content Area - Always Split Layout */}
@@ -181,11 +202,30 @@ const MainPage = () => {
                                                             <div
                                                                 key={doc.docId || index}
                                                                 className={`document-item${selectedDocument && selectedDocument.docId === doc.docId ? ' selected' : ''}`}
-                                                                onClick={() => handleSelectDocument(doc)}
-                                                                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '10px' }}
+                                                                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '10px', justifyContent: 'space-between' }}
                                                             >
-                                                                <CheckCircle size={10} />
-                                                                <span>{doc.originalName}</span>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }} onClick={() => handleSelectDocument(doc)}>
+                                                                    <CheckCircle size={10} />
+                                                                    <span>{doc.originalName}</span>
+                                                                </div>
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setDeleteToConfirm(doc);
+                                                                    }}
+                                                                    style={{
+                                                                        background: 'transparent',
+                                                                        border: 'none',
+                                                                        cursor: 'pointer',
+                                                                        color: '#ef4444',
+                                                                        padding: '0.25rem',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center'
+                                                                    }}
+                                                                    title="Delete document"
+                                                                >
+                                                                    <Trash2 size={16} />
+                                                                </button>
                                                             </div>
                                                         ))}
                                                     </div>
@@ -253,6 +293,66 @@ const MainPage = () => {
                     <p>Powered by Gemini AI & RAG Technology</p>
                 </div>
             </div>
+
+            {/* Delete Confirmation Popup */}
+            {deleteToConfirm && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0, 0, 0, 0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000
+                }}>
+                    <div style={{
+                        background: 'white',
+                        padding: '2rem',
+                        borderRadius: '12px',
+                        maxWidth: '400px',
+                        width: '90%',
+                        boxShadow: '0 4px 24px rgba(0, 0, 0, 0.2)'
+                    }}>
+                        <h3 style={{ margin: '0 0 1rem 0', color: '#1f2937' }}>Delete Document</h3>
+                        <p style={{ margin: '0 0 1.5rem 0', color: '#6b7280' }}>
+                            Are you sure you want to delete "<strong>{deleteToConfirm.originalName}</strong>"? This action cannot be undone.
+                        </p>
+                        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                            <button
+                                onClick={() => setDeleteToConfirm(null)}
+                                style={{
+                                    padding: '0.5rem 1.5rem',
+                                    border: '1px solid #d1d5db',
+                                    background: 'white',
+                                    color: '#6b7280',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    fontWeight: '500'
+                                }}
+                            >
+                                No
+                            </button>
+                            <button
+                                onClick={() => handleDeleteDocument(deleteToConfirm.docId)}
+                                style={{
+                                    padding: '0.5rem 1.5rem',
+                                    border: 'none',
+                                    background: '#ef4444',
+                                    color: 'white',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    fontWeight: '500'
+                                }}
+                            >
+                                Yes, Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
