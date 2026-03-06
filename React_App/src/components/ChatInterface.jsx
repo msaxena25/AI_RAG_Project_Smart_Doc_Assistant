@@ -37,7 +37,7 @@ const ChatInterface = ({ selectedQuery, selectedDocument, systemMessage, onSyste
   };
 
   useEffect(() => {
-    scrollToBottom();
+    let timeoutId;
     if (selectedQuery) {
       setMessages(prev => [
         ...prev,
@@ -59,6 +59,8 @@ const ChatInterface = ({ selectedQuery, selectedDocument, systemMessage, onSyste
       ]);
       setInputValue('');
       setError(null);
+      // Delay scroll to bottom to ensure DOM is updated
+      timeoutId = setTimeout(scrollToBottom, 100);
     }
     // Show system message after document upload
     if (systemMessage) {
@@ -75,7 +77,11 @@ const ChatInterface = ({ selectedQuery, selectedDocument, systemMessage, onSyste
       if (typeof onSystemMessageShown === 'function') {
         onSystemMessageShown();
       }
+      timeoutId = setTimeout(scrollToBottom, 100);
     }
+    // Always scroll to bottom after update
+    timeoutId = setTimeout(scrollToBottom, 100);
+    return () => clearTimeout(timeoutId);
   }, [selectedQuery, systemMessage]);
 
   // Handle form submission
