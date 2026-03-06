@@ -48,9 +48,11 @@ class RAGService {
 
         if (!promptEmbedding) {
             console.log('📝 Generating new embedding for prompt...');
-            //promptEmbedding = await generateEmbeddingsForUserPrompt(userPrompt);
-            promptEmbedding = [[{ "values": [0.1, 0.2, 0.3] }]]; // Placeholder embedding for testing
-            // Cache the new embedding for future use
+            if (USE_LLM_MODEL) {
+                promptEmbedding = await generateEmbeddingsForUserPrompt(userPrompt);
+            } else {
+                promptEmbedding = [[{ "values": [0.1, 0.2, 0.3] }]]; // Placeholder embedding for testing
+            }
             storePromptEmbedding(userPrompt, promptEmbedding);
         } else {
             console.log('✅ Using cached embedding for prompt');

@@ -1,3 +1,4 @@
+
 import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
@@ -435,6 +436,27 @@ class SQLLiteDB {
             return results;
         } catch (error) {
             console.error('❌ Failed to get all documents:', error);
+            throw error;
+        }
+    }
+
+    /**
+ * Get document by original name
+ * @param {string} originalName - Original file name
+ * @returns {object|null} Document data or null if not found
+ */
+    getDocumentByOriginalName(originalName) {
+        const selectSQL = `
+            SELECT docId
+            FROM documents
+            WHERE originalName = ? AND isDeleted = 0
+        `;
+        try {
+            const stmt = this.db.prepare(selectSQL);
+            const result = stmt.get(originalName);
+            return result || null;
+        } catch (error) {
+            console.error('❌ Failed to get document by original name:', error);
             throw error;
         }
     }

@@ -62,7 +62,7 @@ router.post("/upload", upload.single('document'), async (request, response) => {
         // Process the uploaded PDF file
         const embeddings = await processPdf(request.file.path);
 
-        // Store document metadata in SQLite
+        // Store document metadata in SQLite only if not already present
         const docData = {
             originalName: request.file.originalname,
             storedFileName: request.file.filename,
@@ -71,21 +71,28 @@ router.post("/upload", upload.single('document'), async (request, response) => {
             mimeType: request.file.mimetype
         };
 
-        const insertedDoc = sqliteDB.insertDocument(docData);
-
-        // Update document with processing results
-        sqliteDB.updateDocumentAfterProcessing(insertedDoc.docId, {
-            embeddingDocId: embeddings.embeddingDocId,
-            totalEmbeddings: embeddings.totalEmbeddings
-        });
+        // Check for duplicate by originalName
+        const existingDoc = sqliteDB.getDocumentByOriginalName(request.file.originalname);
+        console.log("🚀 ~ existingDoc:", existingDoc)
+        let insertedDoc;
+        if (!existingDoc) {
+            insertedDoc = sqliteDB.insertDocument(docData);
+            // Update document with processing results
+            sqliteDB.updateDocumentAfterProcessing(insertedDoc.docId, {
+                embeddingDocId: embeddings.embeddingDocId,
+                totalEmbeddings: embeddings.totalEmbeddings
+            });
+        } else {
+            insertedDoc = existingDoc;
+        }
 
         response.json({
             success: true,
-            message: "PDF processed successfully",
+            message: existingDoc ? "Document already exists. Returning existing entry." : "PDF processed successfully",
             docId: insertedDoc.docId,
-            docName: request.file.originalname,
-            filePath: request.file.path,
-            fileSize: request.file.size,
+            docName: insertedDoc.originalName,
+            filePath: insertedDoc.filePath,
+            fileSize: insertedDoc.fileSize,
             embeddings: {
                 count: embeddings.totalEmbeddings,
                 embeddingDocId: embeddings.embeddingDocId,
