@@ -57,7 +57,7 @@ apiClient.interceptors.response.use(
         case 500:
           throw new Error('Server error. Please try again later.' + (data.details ? ` Details: ${data.details}` : ''));
         default:
-          throw new Error(data?.message || `API Error: ${status}`);
+          throw new Error(data?.error || `API Error: ${status}`);
       }
     } else if (error.request) {
       throw new Error('Network error. Please check your connection.');
