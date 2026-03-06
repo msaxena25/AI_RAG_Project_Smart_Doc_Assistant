@@ -9,10 +9,29 @@ const router = express.Router();
 
 /**
  * Health check endpoint
+/**
+ * Delete a single query by ID
+ * DELETE /queries/:queryId
  */
-router.get("/", (request, response) => {
-    response.type("text").send(API_MESSAGES.SERVER_RUNNING);
+router.delete("/queries/:queryId", async (request, response) => {
+    try {
+        const { queryId } = request.params;
+        if (!queryId) {
+            response.status(400).json({ success: false, error: "Query ID required" });
+            return;
+        }
+        const success = sqliteDB.deleteQuery(queryId);
+        if (success) {
+            response.json({ success: true, message: `Query ${queryId} soft deleted.` });
+        } else {
+            response.status(404).json({ success: false, error: "Query not found or already deleted" });
+        }
+    } catch (error) {
+        console.log("🚀 ~ Delete query error:", error);
+        response.status(500).json({ success: false, error: "Failed to delete query", details: error.message });
+    }
 });
+
 /**
  * Main query endpoint - processes user questions using RAG
  */

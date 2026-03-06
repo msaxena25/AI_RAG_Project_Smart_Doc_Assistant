@@ -134,6 +134,40 @@ router.get("/fetch", async (request, response) => {
 });
 
 /**
+ * Delete a single document by ID
+ * DELETE /documents/:docId
+ */
+router.delete("/:docId", async (request, response) => {
+    try {
+        const { docId } = request.params;
+        if (!docId) {
+            response.status(400).json({ success: false, error: "Document ID required" });
+            return;
+        }
+        
+        const success = sqliteDB.deleteDocument(docId);
+        if (success) {
+            response.json({ 
+                success: true, 
+                message: `Document ${docId} deleted successfully.` 
+            });
+        } else {
+            response.status(404).json({ 
+                success: false, 
+                error: "Document not found or already deleted" 
+            });
+        }
+    } catch (error) {
+        console.log("🚀 ~ Delete document error:", error);
+        response.status(500).json({ 
+            success: false, 
+            error: "Failed to delete document", 
+            details: error.message 
+        });
+    }
+});
+
+/**
  * Delete all documents from database
  * DELETE /documents/clear
  */
